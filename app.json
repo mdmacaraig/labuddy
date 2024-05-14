@@ -1,5 +1,6 @@
 {
   "expo": {
+    "scheme": "labuddy",
     "name": "labuddy",
     "slug": "labuddy",
     "version": "1.0.0",
@@ -21,7 +22,11 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }

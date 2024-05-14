@@ -30,7 +30,7 @@ export default function App() {
           >
             <VStack space="xl">
               <Heading color="$text900" lineHeight="$md">
-                Login to Labuddy 
+                Login to Labuddy
               </Heading>
               <VStack space="xs">
                 <Text color="$text500" lineHeight="$xs">
@@ -58,8 +58,8 @@ export default function App() {
               <Button
                 ml="auto"
                 onPress={() => {
-                  //nav to next
-                  {router.push('/dashboard.js')}
+                  //nav to next, auth w database
+                  {router.push('/Dashboard')}
                 }}
               >
                 <ButtonText color="$white">Save</ButtonText>

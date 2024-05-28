@@ -10,7 +10,7 @@ export default function Layout() {
       fontWeight: 'bold',
     },
   }}>
-    <Stack.Screen name="index" options={{title: 'Labuddy'}} />
+    <Stack.Screen name="index" options={{title: 'Sign Up'}} />
     <Stack.Screen name="Dashboard" options={{headerLeft: () => null}} />
   </Stack>; 
 }

@@ -34,6 +34,7 @@ import { config } from '@gluestack-ui/config';
 import supabase from "../lib/supabase";
 
 
+
 export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
     const color_weight = labuddy.color_weight
     const white_weight = labuddy.white_weight
@@ -45,6 +46,12 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
     const [showModal, setShowModal] = useState(false);
     const ref = useRef(null);
 
+    const [formData, setFormData] = useState({
+        labuddy_name: "",
+        form_white_max:0,
+        form_color_max:0,
+    });
+
     useEffect(() => {
         const fetchData = async () => {
             await getLabuddyMetadata();
@@ -54,7 +61,57 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
 
     }, []);
 
+    function calcNumLoads(weight, maxload)
+    {
+        if (Math.floor(weight/maxload) == weight/maxload)
+        {
+            return weight/maxload
+        }
+        else{
+            return weight/maxload + 1
+        }
+    }
+    
+    const handleChange = (name, value) => {
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value
+        }));
+        console.log(formData)
+    };
 
+    async function updateSupabase(labuddyid){
+        console.log(formData.labuddy_name)
+        if(formData.labuddy_name != "")
+        {
+            const { data: lbuddy, error: lbuddyError } = await supabase
+            .from('users')
+            .update({first_name: formData.labuddy_name})
+            .eq('id', labuddyid)
+            .select('first_name, id')
+        }
+        
+        if(formData.form_white_max != "" && formData.form_white_max != 0)
+        {
+            const { data: lbuddy, error: lbuddyError } = await supabase
+            .from('baskets')
+            .update({white_weight_limit: formData.form_white_max})
+            .eq('id', labuddyid)
+            .select('white_weight_limit, id')
+        }
+
+        if(formData.form_color_max != "" && formData.form_color_max != 0)
+        {
+            const { data: lbuddy, error: lbuddyError } = await supabase
+            .from('baskets')
+            .update({color_weight_limit: formData.form_color_max})
+            .eq('id', labuddyid)
+            .select('white_weight_limit, id')
+        }
+
+        await getLabuddyMetadata();
+
+    };
 
     async function getLabuddyMetadata() {
         const { data: lbuddy, error: lbuddyError } = await supabase
@@ -98,34 +155,68 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
             </ModalCloseButton>
           </ModalHeader>
           <ModalBody>
-            <Text>
-              Elevate user interactions with our versatile modals. Seamlessly
-              integrate notifications, forms, and media displays. Make an impact
-              effortlessly.
-            </Text>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="outline"
-              size="sm"
-              action="secondary"
-              mr="$3"
-              onPress={() => {
-                setShowModal(false)
-              }}
-            >
-              <ButtonText>Cancel</ButtonText>
-            </Button>
-            <Button
+            
+          <VStack space="md">
+                <Heading size="xs">Edit Labuddy Name</Heading>
+                <Input
+                                                  variant="outline"
+                                                  size="md"
+                                                  isDisabled={false}
+                                                  isInvalid={false}
+                                                  isReadOnly={false}
+                                                >
+                                                  <InputField
+                                                    placeholder= {labuddyMetadata == null ?
+                                                        ('Labuddy') 
+                                                        : (labuddyMetadata.first_name)
+                                                    }
+                                                    onChangeText = {(value) => handleChange("labuddy_name", value)}
+                                                  />
+                                                </Input>
+                                                <Heading size="xs">Edit Max Weight for White Clothes</Heading>
+                <Input
+                                                  variant="outline"
+                                                  size="md"
+                                                  isDisabled={false}
+                                                  isInvalid={false}
+                                                  isReadOnly={false}
+                                                >
+                                                  <InputField
+                                                    placeholder= {white_weight_limit
+                                                    }
+                                                    onChangeText = {(value) => handleChange("form_white_max", value)}
+                                                  />
+                                                </Input>
+                                                <Heading size="xs">Edit Max Weight for Colored Clothes</Heading>
+                <Input
+                                                  variant="outline"
+                                                  size="md"
+                                                  isDisabled={false}
+                                                  isInvalid={false}
+                                                  isReadOnly={false}
+                                                >
+                                                  <InputField
+                                                    placeholder= {color_weight_limit
+                                                    }
+                                                    onChangeText = {(value) => handleChange("form_color_max", value)}
+                                                  />
+                                                </Input>
+
+                                                <Button
               size="sm"
               action="positive"
               borderWidth="$0"
               onPress={() => {
-                setShowModal(false)
+                updateSupabase(labuddy.id)
               }}
             >
-              <ButtonText>Explore</ButtonText>
+              <ButtonText>Save</ButtonText>
             </Button>
+
+                </VStack>
+          </ModalBody>
+          <ModalFooter>
+
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -145,7 +236,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
                     <ProgressFilledTrack h={20} bg="$orange500" />
                 </Progress>
                 <Text size="xs">{color_weight} kg / {color_weight_limit} kg {is_color_full ? (' |  Color bin full!') : ('')}</Text>
-                <Text size="xs" color="black" bold='true'>Cost: {(perKilo) ? cost * (white_weight + color_weight) : Math.floor((white_weight / maxload) + 1) * cost + Math.floor((color_weight / maxload) + 1) * cost }</Text>
+                <Text size="xs" color="black" bold='true'>Cost: {(perKilo) ? cost * (white_weight + color_weight) : Math.floor(calcNumLoads(white_weight,maxload)) * cost + Math.floor(calcNumLoads(color_weight,maxload)) * cost }</Text>
                 </VStack>
             </Box>
             

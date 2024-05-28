@@ -93,7 +93,7 @@ const LoginForm = () => {
                     secureTextEntry
                 />
                 <Button
-                title="SUBMIT"
+                title="LOG IN"
                 variant="outlined"
                 onPress={doLogin}
                 style={styles.button}

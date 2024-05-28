@@ -39,7 +39,9 @@ import {
     SelectDragIndicator,
     SelectDragIndicatorWrapper,
     SelectItem,
-    ScrollView
+    ScrollView,
+    Switch,
+    HStack
 } from "@gluestack-ui/themed";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
@@ -61,7 +63,9 @@ export default function Dashboard() {
         wifi_name: "",
         wifi_password: "",
         network_id: "",
-        cost: 0
+        cost: 0,
+        perKilo: true,
+        maxload: 0,
     });
 
     const handleChange = (name, value) => {
@@ -69,7 +73,14 @@ export default function Dashboard() {
             ...prevData,
             [name]: value
         }));
-        console.log(formData);
+    };
+
+    const handleToggle = (name, value) => {
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: !value
+        }));
+        console.log(formData)
     };
 
     useEffect(() => {
@@ -394,6 +405,11 @@ export default function Dashboard() {
                                 </ModalFooter>
                             </ModalContent>
                         </Modal>
+                        <HStack space="md">
+                <Text size="sm">Cost per kilo</Text>
+                <Switch isDisabled={false} isInvalid={false} onValueChange={(value)=>{handleToggle('perKilo', value)}}/>
+                <Text size="sm">Cost per max load</Text>
+                </HStack>
                 <Input
                   variant="outline"
                   size="md"
@@ -402,8 +418,20 @@ export default function Dashboard() {
                   isReadOnly={false}
                 >
                   <InputField
-                    placeholder="Cost per kg"
-                    onChangeText={(value) => handleChange('cost', value)}
+                    placeholder= {(formData.perKilo) ? "Cost per kg" : "Cost per max load"}
+                    onChangeText={(value) => handleChange('cost', value) }
+                  />
+                </Input>
+                <Input
+                  variant="outline"
+                  size="md"
+                  isDisabled={(formData.perKilo)}
+                  isInvalid={false}
+                  isReadOnly={false}
+                >
+                  <InputField
+                    placeholder= {"Max load in kg"}
+                    onChangeText={(value) => handleChange('maxload', value) }
                   />
                 </Input>
                         {labuddies.length > 0 ? (
@@ -411,6 +439,8 @@ export default function Dashboard() {
                                 <LabuddyCard
                                     labuddy={labuddy}
                                     cost={formData.cost}
+                                    perKilo={formData.perKilo}
+                                    maxload={formData.maxload}
                                     key={labuddy.id}
                                 />
                             ))

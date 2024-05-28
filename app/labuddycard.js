@@ -33,7 +33,8 @@ import { GluestackUIProvider } from '@gluestack-ui/themed';
 import { config } from '@gluestack-ui/config';
 import supabase from "../lib/supabase";
 
-export default function LabuddyCard({ labuddy, cost}) {
+
+export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
     const color_weight = labuddy.color_weight
     const white_weight = labuddy.white_weight
     const color_weight_limit = labuddy.color_weight_limit
@@ -52,6 +53,8 @@ export default function LabuddyCard({ labuddy, cost}) {
         fetchData();
 
     }, []);
+
+
 
     async function getLabuddyMetadata() {
         const { data: lbuddy, error: lbuddyError } = await supabase
@@ -142,7 +145,7 @@ export default function LabuddyCard({ labuddy, cost}) {
                     <ProgressFilledTrack h={20} bg="$orange500" />
                 </Progress>
                 <Text size="xs">{color_weight} kg / {color_weight_limit} kg {is_color_full ? (' |  Color bin full!') : ('')}</Text>
-                <Text size="xs" color="black" bold='true'>Cost: {cost * (white_weight + color_weight)}</Text>
+                <Text size="xs" color="black" bold='true'>Cost: {(perKilo) ? cost * (white_weight + color_weight) : Math.floor((white_weight / maxload) + 1) * cost + Math.floor((color_weight / maxload) + 1) * cost }</Text>
                 </VStack>
             </Box>
             

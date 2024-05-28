@@ -9,6 +9,8 @@ export default function LabuddyCard({labuddy}) {
     const white_weight = labuddy.white_weight
     const color_weight_limit = labuddy.color_weight_limit
     const white_weight_limit = labuddy.white_weight_limit
+    const is_color_full = labuddy.is_color_full
+    const is_white_full = labuddy.is_white_full
     return (
         <GluestackUIProvider config={config}>
             <Box w="$72" p="$4" borderWidth="$1" h="$200"

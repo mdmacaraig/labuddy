@@ -53,14 +53,12 @@ export default function LabuddyCard({ labuddy, cost}) {
                 <Progress value={(white_weight / white_weight_limit) * 100} w='auto' size="md" h={20} bg="#dddddd">
                     <ProgressFilledTrack h={20} bg="#aaaaaa" />
                 </Progress>
-                <Text size="xs">{white_weight} kg / {white_weight_limit} kg</Text>
-                <Text>{is_white_full ? ('White bin full!') : ('')}</Text>
+                <Text size="xs">{white_weight} kg / {white_weight_limit} kg {is_white_full ? (' |  White bin full!') : ('')}</Text>
                 <Progress value={(color_weight / color_weight_limit) * 100} w='auto' size="md" h={20} bg="$orange100">
                     <ProgressFilledTrack h={20} bg="$orange500" />
                 </Progress>
-                <Text size="xs">{color_weight} kg / {color_weight_limit} kg</Text>
-                <Text>{is_color_full ? ('Color bin full!') : ('')}</Text>
-                <Text size="xs">Cost: {cost * (white_weight + color_weight)}</Text>
+                <Text size="xs">{color_weight} kg / {color_weight_limit} kg {is_color_full ? (' |  Color bin full!') : ('')}</Text>
+                <Text size="xs" color="black" bold='true'>Cost: {cost * (white_weight + color_weight)}</Text>
                 </VStack>
             </Box>
             

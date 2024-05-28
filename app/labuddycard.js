@@ -1,7 +1,34 @@
 import { StatusBar } from 'expo-status-bar';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
-import { Heading, Text, Box, Progress, ProgressFilledTrack } from '@gluestack-ui/themed';
+import { Heading, Text, Box, Progress, ProgressFilledTrack,
+    VStack,
+    Input,
+    InputField,
+    Button,
+    ButtonText,
+    ButtonIcon,
+    AddIcon,
+    CloseIcon,
+    Modal,
+    ModalBackdrop,
+    ModalContent,
+    ModalBody,
+    ModalHeader,
+    ModalCloseButton,
+    ModalFooter,
+    Icon,
+    Select,
+    SelectTrigger,
+    SelectInput,
+    SelectIcon,
+    ChevronDownIcon,
+    SelectPortal,
+    SelectBackdrop,
+    SelectContent,
+    SelectDragIndicator,
+    SelectDragIndicatorWrapper,
+    SelectItem} from '@gluestack-ui/themed';
 import { GluestackUIProvider } from '@gluestack-ui/themed';
 import { config } from '@gluestack-ui/config';
 import supabase from "../lib/supabase";
@@ -14,6 +41,8 @@ export default function LabuddyCard({ labuddy }) {
     const is_color_full = labuddy.is_color_full
     const is_white_full = labuddy.is_white_full
     const [labuddyMetadata, setMetadata] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+    const ref = useRef(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -41,6 +70,62 @@ export default function LabuddyCard({ labuddy }) {
 
     return (
         <GluestackUIProvider config={config}>
+            <Pressable
+                    onPress={() => setShowModal(true)}
+                    p="$5"
+                    bg="$primary500"
+                    $hover-bg="$primary400"
+                    ref={ref}
+                >
+                <Modal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false)
+        }}
+        finalFocusRef={ref}
+      >
+        <ModalBackdrop />
+        <ModalContent>
+          <ModalHeader>
+            <Heading size="lg">{labuddyMetadata == null ?
+                ('Labuddy') 
+                : (labuddyMetadata.first_name)}</Heading>
+            <ModalCloseButton>
+              <Icon as={CloseIcon} />
+            </ModalCloseButton>
+          </ModalHeader>
+          <ModalBody>
+            <Text>
+              Elevate user interactions with our versatile modals. Seamlessly
+              integrate notifications, forms, and media displays. Make an impact
+              effortlessly.
+            </Text>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              action="secondary"
+              mr="$3"
+              onPress={() => {
+                setShowModal(false)
+              }}
+            >
+              <ButtonText>Cancel</ButtonText>
+            </Button>
+            <Button
+              size="sm"
+              action="positive"
+              borderWidth="$0"
+              onPress={() => {
+                setShowModal(false)
+              }}
+            >
+              <ButtonText>Explore</ButtonText>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
             <Box w="$72" p="$4" borderWidth="$1" h="$200"
                 borderRadius="$lg"
                 borderColor="$borderLight300">
@@ -58,7 +143,9 @@ export default function LabuddyCard({ labuddy }) {
                 <Text>{is_color_full ? ('Color bin full!') : ('')}</Text>
             </Box>
             <StatusBar style="auto" />
+            </Pressable>
         </GluestackUIProvider>
+        
     );
 }
 const styles = StyleSheet.create({

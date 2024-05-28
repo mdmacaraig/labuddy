@@ -44,6 +44,7 @@ import {
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
 import { useNavigation, router } from "expo-router";
+import { Dropdown } from 'react-native-element-dropdown';
 import LabuddyCard from "./labuddycard";
 import supabase from "../lib/supabase";
 import axios from "axios";
@@ -54,7 +55,8 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [networks, setNetworks] = useState([]);
     const navigation = useNavigation();
-    const [showModal, setShowModal] = useState(false);
+    const [showModal, setShowModal] = useState(false); // For adding a labuddy
+    const [showModal2, setShowModal2] = useState(false); // For creating a network
     const ref = useRef(null);
 
     const [formData, setFormData] = useState({
@@ -207,6 +209,21 @@ export default function Dashboard() {
             }
         }
     }
+    
+    async function createNetwork(formData) {
+        try {
+            const name = formData["network_name"];
+            const response = await supabase
+            .from("networks")
+            .insert([
+                { name: name, owner_id: metadata.id }
+            ])
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+
     if (loading) {
         return (
             <GluestackUIProvider config={config}>
@@ -394,24 +411,110 @@ export default function Dashboard() {
                                 </ModalFooter>
                             </ModalContent>
                         </Modal>
-                <Input
-                  variant="outline"
-                  size="md"
-                  isDisabled={false}
-                  isInvalid={false}
-                  isReadOnly={false}
-                >
-                  <InputField
-                    placeholder="Cost per kg"
-                    onChangeText={(value) => handleChange('cost', value)}
-                  />
-                </Input>
+                        <Button
+                            style={styles.button}
+                            onPress={() => setShowModal2(true)}
+                            ref={ref}
+                        >
+                            <ButtonText>Create Network </ButtonText>
+                            <ButtonIcon as={AddIcon} />
+                        </Button>
+                        <Modal
+                            isOpen={showModal2}
+                            onClose={() => {
+                                setShowModal2(false);
+                                handleChange("network_name", "");
+                            }}
+                            finalFocusRef={ref}
+                        >
+                            <ModalBackdrop />
+                            <ModalContent>
+                                <ModalHeader>
+                                    <Heading size="lg">Create Network</Heading>
+                                    <ModalCloseButton>
+                                        <Icon as={CloseIcon} />
+                                    </ModalCloseButton>
+                                </ModalHeader>
+                                <ModalBody>
+                                    <KeyboardAvoidingView
+                                        behavior={
+                                            Platform.OS === "ios"
+                                                ? "padding"
+                                                : "height"
+                                        }
+                                        style={{ flex: 1 }}
+                                    >
+                                        <VStack space="md">
+                                            <Text>
+                                                Create a network for Labuddies to
+                                                connect to! You will see all Labuddies 
+                                                connected, and everyone else connected 
+                                                will see the same.
+                                            </Text>
+                                            <Input
+                                                variant="outline"
+                                                size="md"
+                                                isDisabled={false}
+                                                isInvalid={false}
+                                                isReadOnly={false}
+                                            >
+                                                <InputField
+                                                    placeholder="Network Name"
+                                                    onChangeText={(value) => {
+                                                        handleChange(
+                                                            "network_name",
+                                                            value
+                                                        );
+                                                    }}
+                                                />
+                                            </Input>
+                                        </VStack>
+                                    </KeyboardAvoidingView>
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        action="secondary"
+                                        mr="$3"
+                                        onPress={() => {
+                                            setShowModal2(false);
+                                        }}
+                                    >
+                                        <ButtonText>Cancel</ButtonText>
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        action="positive"
+                                        borderWidth="$0"
+                                        onPress={() => {
+                                            createNetwork(formData);
+                                            setShowModal2(false);
+                                        }}
+                                    >
+                                        <ButtonText>Add</ButtonText>
+                                    </Button>
+                                </ModalFooter>
+                            </ModalContent>
+                        </Modal>
+                        <Input
+                            variant="outline"
+                            size="md"
+                            isDisabled={false}
+                            isInvalid={false}
+                            isReadOnly={false}
+                        >
+                            <InputField
+                                placeholder="Cost per kg"
+                                onChangeText={(value) => handleChange('cost', value)}
+                            />
+                        </Input>
                         {labuddies.length > 0 ? (
                             labuddies.map((labuddy) => (
                                 <LabuddyCard
-                                    labuddy={labuddy}
-                                    cost={formData.cost}
-                                    key={labuddy.id}
+                                labuddy={labuddy}
+                                cost={formData.cost}
+                                key={labuddy.id}
                                 />
                             ))
                         ) : (
@@ -421,7 +524,7 @@ export default function Dashboard() {
                             style={styles.logout}
                             onPress={doLogout}
                             ref={ref}
-                        >
+                            >
                             <ButtonText>Log out</ButtonText>
                         </Button>
                     </VStack>

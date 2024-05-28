@@ -38,7 +38,8 @@ import {
     SelectContent,
     SelectDragIndicator,
     SelectDragIndicatorWrapper,
-    SelectItem
+    SelectItem,
+    ScrollView
 } from "@gluestack-ui/themed";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
@@ -59,7 +60,8 @@ export default function Dashboard() {
     const [formData, setFormData] = useState({
         wifi_name: "",
         wifi_password: "",
-        network_id: ""
+        network_id: "",
+        cost: 0
     });
 
     const handleChange = (name, value) => {
@@ -205,10 +207,6 @@ export default function Dashboard() {
             }
         }
     }
-
-    const [open, setOpen] = useState(false);
-    const handleOpen = () => setOpen(true);
-    const handleClose = () => setOpen(false);
     if (loading) {
         return (
             <GluestackUIProvider config={config}>
@@ -221,6 +219,7 @@ export default function Dashboard() {
 
     return (
         <GluestackUIProvider config={config}>
+          <ScrollView style = {styles.scroll} p="$5">
             <View style={styles.container}>
                 <Box
                     w="$200"
@@ -395,10 +394,23 @@ export default function Dashboard() {
                                 </ModalFooter>
                             </ModalContent>
                         </Modal>
+                <Input
+                  variant="outline"
+                  size="md"
+                  isDisabled={false}
+                  isInvalid={false}
+                  isReadOnly={false}
+                >
+                  <InputField
+                    placeholder="Cost per kg"
+                    onChangeText={(value) => handleChange('cost', value)}
+                  />
+                </Input>
                         {labuddies.length > 0 ? (
                             labuddies.map((labuddy) => (
                                 <LabuddyCard
                                     labuddy={labuddy}
+                                    cost={formData.cost}
                                     key={labuddy.id}
                                 />
                             ))
@@ -416,6 +428,7 @@ export default function Dashboard() {
                 </Box>
                 <StatusBar style="auto" />
             </View>
+            </ScrollView>
         </GluestackUIProvider>
     );
 }
@@ -432,5 +445,9 @@ const styles = StyleSheet.create({
     },
     logout: {
         backgroundColor: "#C70039"
+    },
+    scroll:{
+      flex: 1,
+      backgroundColor: "#fff",
     }
 });

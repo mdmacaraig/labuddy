@@ -44,7 +44,6 @@ import {
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
 import { useNavigation, router } from "expo-router";
-import { Dropdown } from 'react-native-element-dropdown';
 import LabuddyCard from "./labuddycard";
 import supabase from "../lib/supabase";
 import axios from "axios";

@@ -1,12 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 import { useState, useEffect } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
-import { Heading, Text, Box, Progress, ProgressFilledTrack } from '@gluestack-ui/themed';
+import { Heading, Text, Box, Progress, ProgressFilledTrack, VStack } from '@gluestack-ui/themed';
 import { GluestackUIProvider } from '@gluestack-ui/themed';
 import { config } from '@gluestack-ui/config';
 import supabase from "../lib/supabase";
 
-export default function LabuddyCard({ labuddy }) {
+export default function LabuddyCard({ labuddy, cost}) {
     const color_weight = labuddy.color_weight
     const white_weight = labuddy.white_weight
     const color_weight_limit = labuddy.color_weight_limit
@@ -41,24 +41,31 @@ export default function LabuddyCard({ labuddy }) {
 
     return (
         <GluestackUIProvider config={config}>
+            
             <Box w="$72" p="$4" borderWidth="$1" h="$200"
                 borderRadius="$lg"
                 borderColor="$borderLight300">
+                    <VStack space ="xs">
                 <Heading>{labuddyMetadata == null ?
                 ('Labuddy') 
                 : (labuddyMetadata.first_name)}</Heading>
 
-                <Progress value={(white_weight / white_weight_limit) * 100} w={200} size="md" h={20} bg="#dddddd">
+                <Progress value={(white_weight / white_weight_limit) * 100} w='auto' size="md" h={20} bg="#dddddd">
                     <ProgressFilledTrack h={20} bg="#aaaaaa" />
                 </Progress>
+                <Text size="xs">{white_weight} kg / {white_weight_limit} kg</Text>
                 <Text>{is_white_full ? ('White bin full!') : ('')}</Text>
-                <Progress value={(color_weight / color_weight_limit) * 100} w={200} size="md" h={20} bg="$orange100">
+                <Progress value={(color_weight / color_weight_limit) * 100} w='auto' size="md" h={20} bg="$orange100">
                     <ProgressFilledTrack h={20} bg="$orange500" />
                 </Progress>
+                <Text size="xs">{color_weight} kg / {color_weight_limit} kg</Text>
                 <Text>{is_color_full ? ('Color bin full!') : ('')}</Text>
+                <Text size="xs">Cost: {cost * (white_weight + color_weight)}</Text>
+                </VStack>
             </Box>
+            
             <StatusBar style="auto" />
-        </GluestackUIProvider>
+        </GluestackUIProvider >
     );
 }
 const styles = StyleSheet.create({

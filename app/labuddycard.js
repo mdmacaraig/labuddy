@@ -136,9 +136,9 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
                     p="$5"
                     bg="$primary500"
                     $hover-bg="$primary400"
-                    ref={ref}
+                    
                 >
-                    <Box w="$72" p="$4" borderWidth="$1" h="$200"
+                    <Box style={{flex: 1}} p="$4" borderWidth="$1" h="$200"
                 borderRadius="$lg"
                 borderColor="$borderLight300">
                     <VStack space ="xs">

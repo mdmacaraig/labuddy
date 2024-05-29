@@ -49,17 +49,16 @@ import { useNavigation, router } from "expo-router";
 import LabuddyCard from "./labuddycard";
 import supabase from "../lib/supabase";
 import axios from "axios";
-import { sendPushNotification, registerForPushNotificationsAsync} from "./Notifications";
 
 export default function Dashboard() {
     const [metadata, setMetadata] = useState(null);
-    const [userData, setUserData] = useState(null); // The actual record in "users" table
     const [loading, setLoading] = useState(true);
     const [networks, setNetworks] = useState([]);
     const navigation = useNavigation();
     const [showModal, setShowModal] = useState(false); // For adding a labuddy
     const [showModal2, setShowModal2] = useState(false); // For creating a network
     const ref = useRef(null);
+    const ref2 = useRef(null);
 
     const [formData, setFormData] = useState({
         wifi_name: "",
@@ -128,17 +127,7 @@ export default function Dashboard() {
             // Handle the case where data might be null
             setMetadata(user?.user || []);
             console.log("metadata is ", { metadata });
-            
-            // Getting record from "users" table
-            const { data: userData, error: userDataError } = await supabase
-            .from("users")
-            .select("*")
-            .eq("id", user?.user.id)
-        
-            if (userData) setUserData(userData[0])
-            if (userDataError) console.log(userDataError)
         }
-
     }
 
     async function fetchNetworks() {
@@ -240,23 +229,8 @@ export default function Dashboard() {
                                 </Heading>
                                 <Button
                                     style={styles.button}
-                                    onPress={async () => await registerForPushNotificationsAsync(metadata?.id)}
-                                    ref={ref}
-                                >
-                                <ButtonText>[Debug] Ask Notifs Perms</ButtonText>
-                                </Button>
-                                <Text>{userData?.expo_push_token}</Text>
-                                <Button
-                                style={styles.button}
-                                onPress={async () => await sendPushNotification(userData?.expo_push_token)}
-                                ref={ref} 
-                                >
-                                <ButtonText>[Debug] Send Push Notifs</ButtonText>
-                                </Button>
-                                <Button
-                                    style={styles.button}
                                     onPress={() => setShowModal(true)}
-                                    ref={ref}   
+                                    
                                 >
                                     <ButtonText>Add Labuddy </ButtonText>
                                     <ButtonIcon as={AddIcon} />

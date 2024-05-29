@@ -137,6 +137,28 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
                     $hover-bg="$primary400"
                     ref={ref}
                 >
+                    <Box w="$72" p="$4" borderWidth="$1" h="$200"
+                borderRadius="$lg"
+                borderColor="$borderLight300">
+                    <VStack space ="xs">
+                <Heading size = "sm">{labuddyMetadata == null ?
+                ('Labuddy') 
+                : (labuddyMetadata.first_name)}</Heading>
+
+                <Progress value={(white_weight / white_weight_limit) * 100} w='auto' size="md" h={20} bg="#dddddd">
+                    <ProgressFilledTrack h={20} bg="#aaaaaa" />
+                </Progress>
+                <Text size="xs">{white_weight} kg / {white_weight_limit} kg {is_white_full ? (' |  White bin full!') : ('')}</Text>
+                <Progress value={(color_weight / color_weight_limit) * 100} w='auto' size="md" h={20} bg="$orange100">
+                    <ProgressFilledTrack h={20} bg="$orange500" />
+                </Progress>
+                <Text size="xs">{color_weight} kg / {color_weight_limit} kg {is_color_full ? (' |  Color bin full!') : ('')}</Text>
+                <Text size="xs" color="black" bold='true'>Cost: {(perKilo) ? cost * (white_weight + color_weight) : Math.floor(calcNumLoads(white_weight,maxload)) * cost + Math.floor(calcNumLoads(color_weight,maxload)) * cost }</Text>
+                </VStack>
+            </Box>
+            
+            <StatusBar style="auto" />
+            </Pressable>
                 <Modal
         isOpen={showModal}
         onClose={() => {
@@ -220,28 +242,8 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
           </ModalFooter>
         </ModalContent>
       </Modal>
-            <Box w="$72" p="$4" borderWidth="$1" h="$200"
-                borderRadius="$lg"
-                borderColor="$borderLight300">
-                    <VStack space ="xs">
-                <Heading size = "sm">{labuddyMetadata == null ?
-                ('Labuddy') 
-                : (labuddyMetadata.first_name)}</Heading>
-
-                <Progress value={(white_weight / white_weight_limit) * 100} w='auto' size="md" h={20} bg="#dddddd">
-                    <ProgressFilledTrack h={20} bg="#aaaaaa" />
-                </Progress>
-                <Text size="xs">{white_weight} kg / {white_weight_limit} kg {is_white_full ? (' |  White bin full!') : ('')}</Text>
-                <Progress value={(color_weight / color_weight_limit) * 100} w='auto' size="md" h={20} bg="$orange100">
-                    <ProgressFilledTrack h={20} bg="$orange500" />
-                </Progress>
-                <Text size="xs">{color_weight} kg / {color_weight_limit} kg {is_color_full ? (' |  Color bin full!') : ('')}</Text>
-                <Text size="xs" color="black" bold='true'>Cost: {(perKilo) ? cost * (white_weight + color_weight) : Math.floor(calcNumLoads(white_weight,maxload)) * cost + Math.floor(calcNumLoads(color_weight,maxload)) * cost }</Text>
-                </VStack>
-            </Box>
             
-            <StatusBar style="auto" />
-            </Pressable>
+
         </GluestackUIProvider>
         
     );

@@ -12,5 +12,6 @@ export default function Layout() {
   }}>
     <Stack.Screen name="index" options={{title: 'Sign Up'}} />
     <Stack.Screen name="Dashboard" options={{headerLeft: () => null}} />
+    <Stack.Screen name="labuddydetails" options={{title: "Labuddy Details"}} />
   </Stack>; 
 }

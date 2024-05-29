@@ -32,6 +32,7 @@ import { Heading, Text, Box, Progress, ProgressFilledTrack,
 import { GluestackUIProvider } from '@gluestack-ui/themed';
 import { config } from '@gluestack-ui/config';
 import supabase from "../lib/supabase";
+import { router } from 'expo-router';
 
 
 
@@ -132,7 +133,8 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
     return (
         <GluestackUIProvider config={config}>
             <Pressable
-                    onPress={() => setShowModal(true)}
+                    //onPress={() => setShowModal(true)}
+                    onPress={()=>router.push("labuddydetails")}
                     p="$5"
                     bg="$primary500"
                     $hover-bg="$primary400"

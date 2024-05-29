@@ -35,6 +35,7 @@ import supabase from "../lib/supabase";
 
 
 
+
 export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
     const color_weight = labuddy.color_weight
     const white_weight = labuddy.white_weight
@@ -204,7 +205,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
                                                   isReadOnly={false}
                                                 >
                                                   <InputField
-                                                    placeholder= {white_weight_limit
+                                                    placeholder= {white_weight_limit.toString()
                                                     }
                                                     onChangeText = {(value) => handleChange("form_white_max", value)}
                                                   />
@@ -218,7 +219,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
                                                   isReadOnly={false}
                                                 >
                                                   <InputField
-                                                    placeholder= {color_weight_limit
+                                                    placeholder= {color_weight_limit.toString()
                                                     }
                                                     onChangeText = {(value) => handleChange("form_color_max", value)}
                                                   />

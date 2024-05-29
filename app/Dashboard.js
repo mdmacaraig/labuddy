@@ -49,6 +49,7 @@ import { useNavigation, router } from "expo-router";
 import LabuddyCard from "./labuddycard";
 import supabase from "../lib/supabase";
 import axios from "axios";
+import { sendPushNotification, registerForPushNotificationsAsync} from "./notifs.js";
 
 export default function Dashboard() {
     const [metadata, setMetadata] = useState(null);
@@ -240,6 +241,21 @@ export default function Dashboard() {
                                     {metadata?.user_metadata?.first_name}'s
                                     Labuddies
                                 </Heading>
+                                <Button
+                                    style={styles.button}
+                                    onPress={async () => await registerForPushNotificationsAsync()}
+                                    ref={ref}
+                                >
+                                <ButtonText>Debug Ask Notifs Permissions</ButtonText>
+                                </Button>
+                                <Text>Expo push token: {metadata.user_metadata?.expo_push_token}</Text>
+                                <Button
+                                style={styles.button}
+                                onPress={async () => await sendPushNotification(metadata.user_metadata?.expo_push_token)}
+                                ref={ref}
+                                >
+                                <ButtonText>Debug Send Push Notifications</ButtonText>
+                                </Button>
                                 <Button
                                     style={styles.button}
                                     onPress={() => setShowModal(true)}

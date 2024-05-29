@@ -33,3 +33,6 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# sensitive [cedric]
+labuddy-12271-firebase-adminsdk-w7qql-c4c5838ed0.json

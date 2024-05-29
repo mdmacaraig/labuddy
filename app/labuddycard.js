@@ -224,7 +224,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
                 borderRadius="$lg"
                 borderColor="$borderLight300">
                     <VStack space ="xs">
-                <Heading>{labuddyMetadata == null ?
+                <Heading size = "sm">{labuddyMetadata == null ?
                 ('Labuddy') 
                 : (labuddyMetadata.first_name)}</Heading>
 

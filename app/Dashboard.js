@@ -212,9 +212,10 @@ export default function Dashboard() {
     return (
         <GluestackUIProvider config={config}>
             <ScrollView style={styles.scroll} p="$5">
-                <View style={styles.container}>
+                <View style={styles.container}w="auto">
+                    <HStack space ="md" style={styles.container}>
                     <Box
-                        w="$200"
+                        w="auto"
                         p="$4"
                         borderWidth="$1"
                         borderRadius="$lg"
@@ -532,27 +533,6 @@ export default function Dashboard() {
                                     }
                                 />
                             </Input>
-
-                            {networks.map((network) => (
-                                <div key={network.networks.id}>
-                                    <h2>Network:{network.networks.name}</h2>
-                                    {network.networks.baskets.length > 0 ? (
-                                        network.networks.baskets.map(
-                                            (labuddy) => (
-                                                <LabuddyCard
-                                                    labuddy={labuddy}
-                                                    cost={formData.cost}
-                                                    perKilo={formData.perKilo}
-                                                    maxload={formData.maxload}
-                                                    key={labuddy.id}
-                                                />
-                                            )
-                                        )
-                                    ) : (
-                                        <Text>No Labuddies found</Text>
-                                    )}
-                                </div>
-                            ))}
                             <Button
                                 style={styles.logout}
                                 onPress={doLogout}
@@ -562,6 +542,40 @@ export default function Dashboard() {
                             </Button>
                         </VStack>
                     </Box>
+                    <Box
+                        w="$200"
+                        p="$4"
+                        borderWidth="$1"
+                        borderRadius="$lg"
+                        borderColor="$borderLight300"
+                    >
+                        <VStack space="xl">
+
+                            {networks.length > 0 ? (networks.map((network) => (
+                                <View key={network.networks.id}>
+                                    <Heading size="sm">Network: {network.networks.name}</Heading>
+                                    {network.networks.baskets.length > 0 ? (
+                                        <VStack space = "sm">
+                                        {network.networks.baskets.map(
+                                            (labuddy) => (
+                                                <LabuddyCard
+                                                    labuddy={labuddy}
+                                                    cost={formData.cost}
+                                                    perKilo={formData.perKilo}
+                                                    maxload={formData.maxload}
+                                                    key={labuddy.id}
+                                                />
+                                            )
+                                        )}
+                                        </VStack>) : (
+                                        <VStack space = "sm"><Text>No Labuddies found</Text></VStack>
+                                    )}
+                                </View>
+                            ))): (<Text>No Networks found</Text>)}
+                        </VStack>
+                    </Box>
+                    
+                    </HStack>
                     <StatusBar style="auto" />
                 </View>
             </ScrollView>
@@ -574,7 +588,8 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#fff",
         alignItems: "center",
-        justifyContent: "center"
+        justifyContent: "center",
+        flexDirection: 'column'
     },
     button: {
         backgroundColor: "#028391"

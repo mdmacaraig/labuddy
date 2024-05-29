@@ -136,7 +136,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
                     p="$5"
                     bg="$primary500"
                     $hover-bg="$primary400"
-                    
+                    style = {{zIndex: 0}}
                 >
                     <Box style={{flex: 1}} p="$4" borderWidth="$1" h="$200"
                 borderRadius="$lg"
@@ -166,6 +166,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
           setShowModal(false)
         }}
         finalFocusRef={ref}
+        style={{zIndex : 1000}}
       >
         <ModalBackdrop />
         <ModalContent>
@@ -177,7 +178,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
               <Icon as={CloseIcon} />
             </ModalCloseButton>
           </ModalHeader>
-          <ModalBody>
+          <ModalBody style={{zIndex : 1000}}>
             
           <VStack space="md">
                 <Heading size="xs">Edit Labuddy Name</Heading>
@@ -231,6 +232,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
               borderWidth="$0"
               onPress={() => {
                 updateSupabase(labuddy.id)
+                setShowModal(false)
               }}
             >
               <ButtonText>Save</ButtonText>

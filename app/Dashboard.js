@@ -100,7 +100,7 @@ export default function Dashboard() {
 
         fetchData();
 
-        const subscription = supabase
+        const subscription1 = supabase
             .channel("public:baskets")
             .on(
                 "postgres_changes",
@@ -112,9 +112,22 @@ export default function Dashboard() {
             )
             .subscribe();
 
+        const subscription2 = supabase
+            .channel("public:network_users")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "network_users" },
+                (payload) => {
+                    console.log("Change received!", payload);
+                    fetchNetworks();
+                }
+            )
+            .subscribe();
+
         // Cleanup subscription on component unmount
         return () => {
-            supabase.removeChannel(subscription);
+            supabase.removeChannel(subscription1);
+            supabase.removeChannel(subscription2);
         };
     }, []);
 

@@ -19,8 +19,15 @@
     "@types/react": "~18.2.79",
     "axios": "^1.7.2",
     "expo": "^51.0.9",
+<<<<<<< HEAD
     "expo-constants": "~16.0.2",
     "expo-linking": "~6.3.1",
+=======
+    "expo-constants": "^16.0.2",
+    "expo-device": "~6.0.2",
+    "expo-linking": "~6.3.1",
+    "expo-notifications": "~0.28.4",
+>>>>>>> main
     "expo-router": "^3.5.14",
     "expo-status-bar": "~1.12.1",
     "lucide-react-native": "^0.378.0",
@@ -33,9 +40,13 @@
     "react-native-screens": "3.31.1",
     "react-native-svg": "^15.2.0",
     "react-native-url-polyfill": "^2.0.0",
+<<<<<<< HEAD
     "react-native-web": "~0.19.10",
     "expo-notifications": "~0.28.4",
     "expo-device": "~6.0.2"
+=======
+    "react-native-web": "^0.19.12"
+>>>>>>> main
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

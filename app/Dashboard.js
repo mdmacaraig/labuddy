@@ -146,11 +146,6 @@ export default function Dashboard() {
             )
             .subscribe();
 
-<<<<<<< HEAD
-        // Cleanup subscription on component unmount
-        return () => {
-            supabase.removeChannel(subscription);
-=======
         const subscription2 = supabase
             .channel("public:network_users")
             .on(
@@ -180,7 +175,6 @@ export default function Dashboard() {
             supabase.removeChannel(subscription1);
             supabase.removeChannel(subscription2);
             supabase.removeChannel(subscription3);
->>>>>>> main
         };
     }, []);
 
@@ -321,10 +315,6 @@ export default function Dashboard() {
                                 <Button
                                     style={styles.button}
                                     onPress={() => setShowModal(true)}
-<<<<<<< HEAD
-                                    ref={ref}   
-=======
->>>>>>> main
                                 >
                                     <ButtonText>Add Labuddy </ButtonText>
                                     <ButtonIcon as={AddIcon} />

@@ -157,10 +157,23 @@ export default function Dashboard() {
             )
             .subscribe();
 
+            const subscription3 = supabase
+            .channel("public:users")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "users" },
+                (payload) => {
+                    console.log("Change received!", payload);
+                    fetchNetworks();
+                }
+            )
+            .subscribe();
+
         // Cleanup subscription on component unmount
         return () => {
             supabase.removeChannel(subscription1);
             supabase.removeChannel(subscription2);
+            supabase.removeChannel(subscription3);
         };
     }, []);
 

@@ -34,9 +34,6 @@ import { config } from '@gluestack-ui/config';
 import supabase from "../lib/supabase";
 import { router } from 'expo-router';
 
-
-
-
 export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
     const color_weight = labuddy.color_weight
     const white_weight = labuddy.white_weight

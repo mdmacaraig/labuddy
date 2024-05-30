@@ -19,7 +19,9 @@ import {
     ButtonText,
     ButtonIcon,
     AddIcon,
+    EditIcon,
     CloseIcon,
+    TrashIcon,
     Modal,
     ModalBackdrop,
     ModalContent,
@@ -49,14 +51,18 @@ import { useNavigation, router } from "expo-router";
 import LabuddyCard from "./labuddycard";
 import supabase from "../lib/supabase";
 import axios from "axios";
+import LabuddyDetails from "./labuddydetails";
 
 export default function Dashboard() {
+    const [render, reRender] = useState(false);
     const [metadata, setMetadata] = useState(null);
     const [loading, setLoading] = useState(true);
     const [networks, setNetworks] = useState([]);
     const navigation = useNavigation();
     const [showModal, setShowModal] = useState(false); // For adding a labuddy
     const [showModal2, setShowModal2] = useState(false); // For creating a network
+    const [showModal3, setShowModal3] = useState(false); // For editing a network
+    const [showModal4, setShowModal4] = useState(false); // For deleting a network
     const ref = useRef(null);
     const ref2 = useRef(null);
 
@@ -194,7 +200,40 @@ export default function Dashboard() {
                     ])
                     .select();
 
+            await fetchNetworks();
             console.log("network_user", network_user);
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    
+    function forceRender() {
+        reRender(prev => !prev)
+    }
+
+    async function editNetwork(formData) {
+        try {
+            const newName = formData["network_name"];
+            const id = formData["network_id"];
+            const { data, error } = await supabase
+                .from("networks")
+                .update([{name: newName}])
+                .eq("id", id);
+            await fetchNetworks();
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    async function deleteNetwork(formData) {
+        try {
+            const id = formData["network_id"];
+            const { data, error } = await supabase
+                .from("networks")
+                .delete()
+                .eq("id", id);
+            await fetchNetworks();
+            console.log(id)
         } catch (e) {
             console.log(e);
         }
@@ -537,6 +576,147 @@ export default function Dashboard() {
 
                             </VStack>
                         </Box>
+
+                        {/*Some modals (for the mapped components below) are up here because it bugs out down there*/}
+                        {/*For editing network*/}
+                        <Modal
+                            isOpen={showModal3}
+                            onClose={() => {
+                                setShowModal3(false);
+                            }}
+                            finalFocusRef={ref}
+                        >
+                            <ModalBackdrop />
+                            <ModalContent>
+                                <ModalHeader>   
+                                    <Heading size="lg">
+                                        Edit Network
+                                    </Heading>
+                                    <ModalCloseButton>
+                                        <Icon as={CloseIcon} />
+                                    </ModalCloseButton>
+                                </ModalHeader>
+                                <ModalBody>
+                                    <KeyboardAvoidingView
+                                        behavior={
+                                            Platform.OS === "ios"
+                                                ? "padding"
+                                                : "height"
+                                        }
+                                        style={{ flex: 1 }}
+                                    >
+                                        <VStack space="md">
+                                            <Text>
+                                                Edit your network here.
+                                            </Text>
+                                            <Input
+                                                variant="outline"
+                                                size="md"
+                                                isDisabled={false}
+                                                isInvalid={false}
+                                                isReadOnly={false}
+                                            >
+                                                <InputField
+                                                    placeholder="New Network Name"
+                                                    onChangeText={(value) => {
+                                                        handleChange(
+                                                            "network_name",
+                                                            value
+                                                        );
+                                                    }}
+                                                />
+                                            </Input>
+                                        </VStack>
+                                    </KeyboardAvoidingView>
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        action="secondary"
+                                        mr="$3"
+                                        onPress={() => {
+                                            setShowModal3(false);
+                                        }}
+                                    >
+                                        <ButtonText>Cancel</ButtonText>
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        action="positive"
+                                        borderWidth="$0"
+                                        onPress={() => {
+                                            editNetwork(formData);
+                                            setShowModal3(false);
+                                        }}
+                                    >
+                                        <ButtonText>Edit</ButtonText>
+                                    </Button>
+                                </ModalFooter>
+                            </ModalContent>
+                        </Modal>
+
+                        {/*For (confirming) deleting network*/}
+                        <Modal
+                            isOpen={showModal4}
+                            onClose={() => {
+                                setShowModal4(false);
+                            }}
+                            finalFocusRef={ref}
+                        >
+                            <ModalBackdrop />
+                            <ModalContent>
+                                <ModalHeader>   
+                                    <Heading size="lg">
+                                        Delete network?
+                                    </Heading>
+                                    <ModalCloseButton>
+                                        <Icon as={CloseIcon} />
+                                    </ModalCloseButton>
+                                </ModalHeader>
+                                <ModalBody>
+                                    <KeyboardAvoidingView
+                                        behavior={
+                                            Platform.OS === "ios"
+                                                ? "padding"
+                                                : "height"
+                                        }
+                                        style={{ flex: 1 }}
+                                    >
+                                        <VStack space="md">
+                                            <Text>
+                                                You will be deleting this network forever.
+                                            </Text>
+                                        </VStack>
+                                    </KeyboardAvoidingView>
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        action="secondary"
+                                        mr="$3"
+                                        onPress={() => {
+                                            setShowModal4(false);
+                                        }}
+                                    >
+                                        <ButtonText>Cancel</ButtonText>
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        action="positive"
+                                        borderWidth="$0"
+                                        bg={styles.logout.backgroundColor}
+                                        onPress={() => {
+                                            deleteNetwork(formData);
+                                            setShowModal4(false);
+                                        }}
+                                    >
+                                        <ButtonText>Delete</ButtonText>
+                                    </Button>
+                                </ModalFooter>
+                            </ModalContent>
+                        </Modal>
                         <Box
                             p="$4"
                             borderWidth="$1"
@@ -548,7 +728,28 @@ export default function Dashboard() {
 
                                 {networks.length > 0 ? (networks.map((network) => (
                                     <View key={network.networks.id}>
-                                        <Heading size="sm">Network: {network.networks.name}</Heading>
+                                        <Heading size="sm">
+                                            Network: {network.networks.name}
+                                            <Button 
+                                                size="md" 
+                                                variant="link"
+                                                onPress={() => {
+                                                    handleChange("network_id", network.networks.id)
+                                                    setShowModal3(true)}}
+                                                ref={ref}
+                                            >
+                                                <ButtonIcon as={EditIcon}/>
+                                            </Button>
+                                            <Button
+                                                size="md" 
+                                                variant="link" 
+                                                onPress={() => {
+                                                    handleChange("network_id", network.networks.id)
+                                                    console.log(network.networks.id)
+                                                    setShowModal4(true)}}>
+                                                <ButtonIcon as={TrashIcon}/>
+                                            </Button>
+                                        </Heading>
                                         {network.networks.baskets.length > 0 ? (
                                             <VStack space="sm">
                                                 {network.networks.baskets.map(

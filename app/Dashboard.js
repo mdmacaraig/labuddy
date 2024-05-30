@@ -801,7 +801,7 @@ export default function Dashboard() {
                                                 <VStack space="sm">
                                                     {network.networks.baskets.map(
                                                         (labuddy) => (
-                                                            <div
+                                                            <View
                                                                 key={labuddy.id}
                                                             >
                                                                 <Pressable
@@ -995,7 +995,7 @@ export default function Dashboard() {
                                                                         <ModalFooter></ModalFooter>
                                                                     </ModalContent>
                                                                 </Modal>
-                                                            </div>
+                                                            </View>
                                                         )
                                                     )}
                                                 </VStack>

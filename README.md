@@ -2,9 +2,10 @@
 Expo and Expo Router:
 ```
 npx install-expo-modules@latest
-npx expo install expo-router react-native-safe-area-context react-native-screens expo-linking expo-constants expo-status-bar
-npx expo install expo-notifications expo-device expo-constants
+npx expo install expo-router react-native-safe-area-context react-native-screens expo-linking expo-constants expo-status-bar expo-notifications expo-device
+npm i react-native-svg@15.2.0 expo-router@3.5.14 expo@51.0.9 expo-constants@16.0.2
 ```
+The latter ones are recommended when running expo.
 
 ## How to run:
 ### For web

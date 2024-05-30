@@ -58,7 +58,7 @@ export default function Dashboard() {
     const navigation = useNavigation();
     const [showModal, setShowModal] = useState(false); // For adding a labuddy
     const [showModal2, setShowModal2] = useState(false); // For creating a network
-    const [showModal3, setShowModal3] = useState(false); // For editing labuddy
+    const [showModal5, setShowModal5] = useState(false); // For editing labuddy
     const [selectedLabuddy, setSelectedLabuddy] = useState();
     const ref = useRef(null);
     const ref2 = useRef(null);
@@ -603,12 +603,12 @@ export default function Dashboard() {
                                                 <VStack space="sm">
                                                     {network.networks.baskets.map(
                                                         (labuddy) => (
-                                                            <div
+                                                            <View
                                                                 key={labuddy.id}
                                                             >
                                                                 <Pressable
                                                                     onPress={() =>{
-                                                                        setShowModal3(
+                                                                        setShowModal5(
                                                                             true
                                                                         )
                                                                         setSelectedLabuddy(labuddy)}
@@ -636,7 +636,7 @@ export default function Dashboard() {
                                                                     />
                                                                 </Pressable>
                                                                 
-                                                            </div>
+                                                            </View>
                                                         )
                                                     )}
                                                 </VStack>
@@ -667,12 +667,12 @@ export default function Dashboard() {
                             <ButtonText>Log out</ButtonText>
                         </Button>
                     </Box>
-                    {showModal3 && selectedLabuddy && (<Modal
+                    {showModal5 && selectedLabuddy && (<Modal
                                                                     isOpen={
-                                                                        showModal3
+                                                                        showModal5
                                                                     }
                                                                     onClose={() => {
-                                                                        setShowModal3(
+                                                                        setShowModal5(
                                                                             false
                                                                         );
                                                                     }}
@@ -816,7 +816,7 @@ export default function Dashboard() {
                                                                                         updateSupabase(
                                                                                             selectedLabuddy.id
                                                                                         );
-                                                                                        setShowModal3(
+                                                                                        setShowModal5(
                                                                                             false
                                                                                         );
                                                                                     }}

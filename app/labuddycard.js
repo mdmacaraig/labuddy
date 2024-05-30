@@ -101,7 +101,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload }) {
                     <Heading size="sm">
                         {labuddyMetadata == null
                             ? "Labuddy"
-                            : labuddyMetadata.first_name}
+                            : labuddy.users.first_name}
                     </Heading>
 
                     <Progress

@@ -59,6 +59,7 @@ export default function Dashboard() {
     const [showModal, setShowModal] = useState(false); // For adding a labuddy
     const [showModal2, setShowModal2] = useState(false); // For creating a network
     const [showModal3, setShowModal3] = useState(false); // For editing labuddy
+    const [selectedLabuddy, setSelectedLabuddy] = useState();
     const ref = useRef(null);
     const ref2 = useRef(null);
 
@@ -606,10 +607,11 @@ export default function Dashboard() {
                                                                 key={labuddy.id}
                                                             >
                                                                 <Pressable
-                                                                    onPress={() =>
+                                                                    onPress={() =>{
                                                                         setShowModal3(
                                                                             true
                                                                         )
+                                                                        setSelectedLabuddy(labuddy)}
                                                                     }
                                                                     p="$5"
                                                                     bg="$primary500"
@@ -633,7 +635,39 @@ export default function Dashboard() {
                                                                         }
                                                                     />
                                                                 </Pressable>
-                                                                <Modal
+                                                                
+                                                            </div>
+                                                        )
+                                                    )}
+                                                </VStack>
+                                            ) : (
+                                                <VStack space="sm">
+                                                    <Text>
+                                                        No Labuddies found
+                                                    </Text>
+                                                </VStack>
+                                            )}
+                                        </View>
+                                    ))
+                                ) : (
+                                    <Text>No Networks found</Text>
+                                )}
+                            </VStack>
+                        </Box>
+                    </HStack>
+                    <Box
+                        w="100%"
+                        p="$4"
+                        borderWidth="$1"
+                        borderRadius="$lg"
+                        borderColor="$borderLight300"
+                        style={{ flex: 2, minWidth: 200 }}
+                    >
+                        <Button style={styles.logout} onPress={doLogout}>
+                            <ButtonText>Log out</ButtonText>
+                        </Button>
+                    </Box>
+                    {showModal3 && selectedLabuddy && (<Modal
                                                                     isOpen={
                                                                         showModal3
                                                                     }
@@ -653,10 +687,10 @@ export default function Dashboard() {
                                                                     <ModalContent>
                                                                         <ModalHeader>
                                                                             <Heading size="lg">
-                                                                                {labuddy.users ==
+                                                                                {selectedLabuddy.users ==
                                                                                     null
                                                                                     ? "Labuddy"
-                                                                                    : labuddy.users.first_name}
+                                                                                    : selectedLabuddy.users.first_name}
                                                                             </Heading>
                                                                             <ModalCloseButton>
                                                                                 <Icon
@@ -692,10 +726,10 @@ export default function Dashboard() {
                                                                                 >
                                                                                     <InputField
                                                                                         placeholder={
-                                                                                            labuddy ==
+                                                                                            selectedLabuddy ==
                                                                                                 null
                                                                                                 ? "Labuddy"
-                                                                                                : labuddy.users.first_name
+                                                                                                : selectedLabuddy.users.first_name
                                                                                         }
                                                                                         onChangeText={(
                                                                                             value
@@ -729,7 +763,7 @@ export default function Dashboard() {
                                                                                     }
                                                                                 >
                                                                                     <InputField
-                                                                                        placeholder={labuddy.white_weight_limit.toString()}
+                                                                                        placeholder={selectedLabuddy.white_weight_limit.toString()}
                                                                                         onChangeText={(
                                                                                             value
                                                                                         ) =>
@@ -762,7 +796,7 @@ export default function Dashboard() {
                                                                                     }
                                                                                 >
                                                                                     <InputField
-                                                                                        placeholder={labuddy.color_weight_limit.toString()}
+                                                                                        placeholder={selectedLabuddy.color_weight_limit.toString()}
                                                                                         onChangeText={(
                                                                                             value
                                                                                         ) =>
@@ -780,7 +814,7 @@ export default function Dashboard() {
                                                                                     borderWidth="$0"
                                                                                     onPress={() => {
                                                                                         updateSupabase(
-                                                                                            labuddy.id
+                                                                                            selectedLabuddy.id
                                                                                         );
                                                                                         setShowModal3(
                                                                                             false
@@ -795,38 +829,7 @@ export default function Dashboard() {
                                                                         </ModalBody>
                                                                         <ModalFooter></ModalFooter>
                                                                     </ModalContent>
-                                                                </Modal>
-                                                            </div>
-                                                        )
-                                                    )}
-                                                </VStack>
-                                            ) : (
-                                                <VStack space="sm">
-                                                    <Text>
-                                                        No Labuddies found
-                                                    </Text>
-                                                </VStack>
-                                            )}
-                                        </View>
-                                    ))
-                                ) : (
-                                    <Text>No Networks found</Text>
-                                )}
-                            </VStack>
-                        </Box>
-                    </HStack>
-                    <Box
-                        w="100%"
-                        p="$4"
-                        borderWidth="$1"
-                        borderRadius="$lg"
-                        borderColor="$borderLight300"
-                        style={{ flex: 2, minWidth: 200 }}
-                    >
-                        <Button style={styles.logout} onPress={doLogout}>
-                            <ButtonText>Log out</ButtonText>
-                        </Button>
-                    </Box>
+                                                                </Modal>)}
                     <StatusBar style="auto" />
                 </VStack>
             </ScrollView>

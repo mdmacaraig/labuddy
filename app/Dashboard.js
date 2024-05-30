@@ -830,6 +830,7 @@ export default function Dashboard() {
                                                                         maxload={
                                                                             formData.maxload
                                                                         }
+                                                                        first_name={labuddy.users.first_name}
                                                                     />
                                                                 </Pressable>
                                                                 <Modal

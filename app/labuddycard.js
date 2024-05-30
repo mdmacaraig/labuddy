@@ -44,6 +44,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
     const white_weight_limit = labuddy.white_weight_limit
     const is_color_full = labuddy.is_color_full
     const is_white_full = labuddy.is_white_full
+    const name = labuddy.users.first_name
     const [labuddyMetadata, setMetadata] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const ref = useRef(null);
@@ -65,6 +66,9 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
 
     function calcNumLoads(weight, maxload)
     {
+        console.log(color_weight_limit)
+        console.log("labuddy is ", {labuddy})
+        console.log("my name is ", labuddy.users.first_name)
         if (Math.floor(weight/maxload) == weight/maxload)
         {
             return weight/maxload
@@ -139,7 +143,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
                     <VStack space ="xs">
                 <Heading size = "sm">{labuddyMetadata == null ?
                 ('Labuddy') 
-                : (labuddyMetadata.first_name)}</Heading>
+                : (labuddy.users.first_name)}</Heading>
 
                 <Progress value={(white_weight / white_weight_limit) * 100} w='auto' size="md" h={20} bg="#dddddd">
                     <ProgressFilledTrack h={20} bg="#aaaaaa" />

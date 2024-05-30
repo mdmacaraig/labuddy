@@ -4,7 +4,8 @@ import {
     View,
     ActivityIndicator,
     Typography,
-    Platform
+    Platform,
+    Pressable
 } from "react-native";
 import { useState, useEffect, useRef } from "react";
 import {
@@ -19,7 +20,9 @@ import {
     ButtonText,
     ButtonIcon,
     AddIcon,
+    EditIcon,
     CloseIcon,
+    TrashIcon,
     Modal,
     ModalBackdrop,
     ModalContent,
@@ -57,6 +60,9 @@ export default function Dashboard() {
     const navigation = useNavigation();
     const [showModal, setShowModal] = useState(false); // For adding a labuddy
     const [showModal2, setShowModal2] = useState(false); // For creating a network
+    const [showModal3, setShowModal3] = useState(false); // For editing a network
+    const [showModal4, setShowModal4] = useState(false); // For deleting a network
+    const [showModal5, setShowModal5] = useState(false); // For editing labuddy
     const ref = useRef(null);
     const ref2 = useRef(null);
 
@@ -66,7 +72,10 @@ export default function Dashboard() {
         network_id: "",
         cost: 0,
         perKilo: true,
-        maxload: 0
+        maxload: 0,
+        labuddy_name: "",
+        form_white_max: 0,
+        form_color_max: 0
     });
 
     const handleChange = (name, value) => {
@@ -77,13 +86,40 @@ export default function Dashboard() {
         console.log(formData);
     };
 
-    const handleToggle = (name, value) => {
+    const handleToggle = (name) => {
         setFormData((prevData) => ({
             ...prevData,
-            [name]: !value
+            [name]: !prevData[name]
         }));
         console.log(formData);
     };
+
+    async function updateSupabase(labuddyid) {
+        console.log(formData.labuddy_name);
+        if (formData.labuddy_name != "") {
+            const { data: lbuddy, error: lbuddyError } = await supabase
+                .from("users")
+                .update({ first_name: formData.labuddy_name })
+                .eq("id", labuddyid)
+                .select("first_name, id");
+        }
+
+        if (formData.form_white_max != "" && formData.form_white_max != 0) {
+            const { data: lbuddy, error: lbuddyError } = await supabase
+                .from("baskets")
+                .update({ white_weight_limit: formData.form_white_max })
+                .eq("id", labuddyid)
+                .select("white_weight_limit, id");
+        }
+
+        if (formData.form_color_max != "" && formData.form_color_max != 0) {
+            const { data: lbuddy, error: lbuddyError } = await supabase
+                .from("baskets")
+                .update({ color_weight_limit: formData.form_color_max })
+                .eq("id", labuddyid)
+                .select("white_weight_limit, id");
+        }
+    }
 
     useEffect(() => {
         navigation.addListener("beforeRemove", (e) => {
@@ -100,7 +136,7 @@ export default function Dashboard() {
 
         fetchData();
 
-        const subscription = supabase
+        const subscription1 = supabase
             .channel("public:baskets")
             .on(
                 "postgres_changes",
@@ -112,9 +148,22 @@ export default function Dashboard() {
             )
             .subscribe();
 
+        const subscription2 = supabase
+            .channel("public:network_users")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "network_users" },
+                (payload) => {
+                    console.log("Change received!", payload);
+                    fetchNetworks();
+                }
+            )
+            .subscribe();
+
         // Cleanup subscription on component unmount
         return () => {
-            supabase.removeChannel(subscription);
+            supabase.removeChannel(subscription1);
+            supabase.removeChannel(subscription2);
         };
     }, []);
 
@@ -137,7 +186,7 @@ export default function Dashboard() {
         //get network that user can access
         const { data: network, error: networkError } = await supabase
             .from("network_users")
-            .select("networks(*, baskets(*))")
+            .select("networks(*, baskets(*, users(*)))")
             .eq("user_id", userdata?.user?.id);
 
         setNetworks(network || []);
@@ -194,7 +243,40 @@ export default function Dashboard() {
                     ])
                     .select();
 
+            await fetchNetworks();
             console.log("network_user", network_user);
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    
+    function forceRender() {
+        reRender(prev => !prev)
+    }
+
+    async function editNetwork(formData) {
+        try {
+            const newName = formData["network_name"];
+            const id = formData["network_id"];
+            const { data, error } = await supabase
+                .from("networks")
+                .update([{name: newName}])
+                .eq("id", id);
+            await fetchNetworks();
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    async function deleteNetwork(formData) {
+        try {
+            const id = formData["network_id"];
+            const { data, error } = await supabase
+                .from("networks")
+                .delete()
+                .eq("id", id);
+            await fetchNetworks();
+            console.log(id)
         } catch (e) {
             console.log(e);
         }
@@ -212,7 +294,7 @@ export default function Dashboard() {
 
     return (
         <GluestackUIProvider config={config}>
-            <ScrollView style={styles.scroll} p="$5" h='auto'>
+            <ScrollView style={styles.scroll} p="$5" h="auto">
                 <VStack space="md" style={styles.container} w="auto">
                     <HStack w="auto" space="md" style={styles.hstack}>
                         <Box
@@ -222,7 +304,7 @@ export default function Dashboard() {
                             borderColor="$borderLight300"
                             style={{ flex: 1, minWidth: 200 }}
                         >
-                            <VStack space="xl" w='auto'>
+                            <VStack space="xl" w="auto">
                                 <Heading>
                                     {metadata?.user_metadata?.first_name}'s
                                     Labuddies
@@ -230,7 +312,6 @@ export default function Dashboard() {
                                 <Button
                                     style={styles.button}
                                     onPress={() => setShowModal(true)}
-                                    
                                 >
                                     <ButtonText>Add Labuddy </ButtonText>
                                     <ButtonIcon as={AddIcon} />
@@ -245,7 +326,9 @@ export default function Dashboard() {
                                     <ModalBackdrop />
                                     <ModalContent>
                                         <ModalHeader>
-                                            <Heading size="lg">Add Labuddy</Heading>
+                                            <Heading size="lg">
+                                                Add Labuddy
+                                            </Heading>
                                             <ModalCloseButton>
                                                 <Icon as={CloseIcon} />
                                             </ModalCloseButton>
@@ -261,10 +344,11 @@ export default function Dashboard() {
                                             >
                                                 <VStack space="md">
                                                     <Text>
-                                                        Add your labuddies here. To
-                                                        add a labuddy connect to the
-                                                        Access Point of the Labuddy
-                                                        you want to connect to.
+                                                        Add your labuddies here.
+                                                        To add a labuddy connect
+                                                        to the Access Point of
+                                                        the Labuddy you want to
+                                                        connect to.
                                                     </Text>
                                                     <Input
                                                         variant="outline"
@@ -403,7 +487,6 @@ export default function Dashboard() {
                                 <Button
                                     style={styles.button}
                                     onPress={() => setShowModal2(true)}
-                                    
                                 >
                                     <ButtonText>Create Network </ButtonText>
                                     <ButtonIcon as={AddIcon} />
@@ -438,10 +521,11 @@ export default function Dashboard() {
                                                 <VStack space="md">
                                                     <Text>
                                                         Create a network for
-                                                        Labuddies to connect to! You
-                                                        will see all Labuddies
-                                                        connected, and everyone else
-                                                        connected will see the same.
+                                                        Labuddies to connect to!
+                                                        You will see all
+                                                        Labuddies connected, and
+                                                        everyone else connected
+                                                        will see the same.
                                                     </Text>
                                                     <Input
                                                         variant="outline"
@@ -534,9 +618,148 @@ export default function Dashboard() {
                                         }
                                     />
                                 </Input>
-
                             </VStack>
                         </Box>
+                        {/*Some modals (for the mapped components below) are up here because it bugs out down there*/}
+                        {/*For editing network*/}
+                        <Modal
+                            isOpen={showModal3}
+                            onClose={() => {
+                                setShowModal3(false);
+                            }}
+                            finalFocusRef={ref}
+                        >
+                            <ModalBackdrop />
+                            <ModalContent>
+                                <ModalHeader>   
+                                    <Heading size="lg">
+                                        Edit Network
+                                    </Heading>
+                                    <ModalCloseButton>
+                                        <Icon as={CloseIcon} />
+                                    </ModalCloseButton>
+                                </ModalHeader>
+                                <ModalBody>
+                                    <KeyboardAvoidingView
+                                        behavior={
+                                            Platform.OS === "ios"
+                                                ? "padding"
+                                                : "height"
+                                        }
+                                        style={{ flex: 1 }}
+                                    >
+                                        <VStack space="md">
+                                            <Text>
+                                                Edit your network here.
+                                            </Text>
+                                            <Input
+                                                variant="outline"
+                                                size="md"
+                                                isDisabled={false}
+                                                isInvalid={false}
+                                                isReadOnly={false}
+                                            >
+                                                <InputField
+                                                    placeholder="New Network Name"
+                                                    onChangeText={(value) => {
+                                                        handleChange(
+                                                            "network_name",
+                                                            value
+                                                        );
+                                                    }}
+                                                />
+                                            </Input>
+                                        </VStack>
+                                    </KeyboardAvoidingView>
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        action="secondary"
+                                        mr="$3"
+                                        onPress={() => {
+                                            setShowModal3(false);
+                                        }}
+                                    >
+                                        <ButtonText>Cancel</ButtonText>
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        action="positive"
+                                        borderWidth="$0"
+                                        onPress={() => {
+                                            editNetwork(formData);
+                                            setShowModal3(false);
+                                        }}
+                                    >
+                                        <ButtonText>Edit</ButtonText>
+                                    </Button>
+                                </ModalFooter>
+                            </ModalContent>
+                        </Modal>
+
+                        {/*For (confirming) deleting network*/}
+                        <Modal
+                            isOpen={showModal4}
+                            onClose={() => {
+                                setShowModal4(false);
+                            }}
+                            finalFocusRef={ref}
+                        >
+                            <ModalBackdrop />
+                            <ModalContent>
+                                <ModalHeader>   
+                                    <Heading size="lg">
+                                        Delete network?
+                                    </Heading>
+                                    <ModalCloseButton>
+                                        <Icon as={CloseIcon} />
+                                    </ModalCloseButton>
+                                </ModalHeader>
+                                <ModalBody>
+                                    <KeyboardAvoidingView
+                                        behavior={
+                                            Platform.OS === "ios"
+                                                ? "padding"
+                                                : "height"
+                                        }
+                                        style={{ flex: 1 }}
+                                    >
+                                        <VStack space="md">
+                                            <Text>
+                                                You will be deleting this network forever.
+                                            </Text>
+                                        </VStack>
+                                    </KeyboardAvoidingView>
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        action="secondary"
+                                        mr="$3"
+                                        onPress={() => {
+                                            setShowModal4(false);
+                                        }}
+                                    >
+                                        <ButtonText>Cancel</ButtonText>
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        action="positive"
+                                        borderWidth="$0"
+                                        bg={styles.logout.backgroundColor}
+                                        onPress={() => {
+                                            deleteNetwork(formData);
+                                            setShowModal4(false);
+                                        }}
+                                    >
+                                        <ButtonText>Delete</ButtonText>
+                                    </Button>
+                                </ModalFooter>
+                            </ModalContent>
+                        </Modal>
                         <Box
                             p="$4"
                             borderWidth="$1"
@@ -545,46 +768,263 @@ export default function Dashboard() {
                             style={{ flex: 2, minWidth: 200 }}
                         >
                             <VStack space="xl">
+                                {networks.length > 0 ? (
+                                    networks.map((network) => (
+                                        <View key={network.networks.id}>
+                                            <Heading size="sm">
 
-                                {networks.length > 0 ? (networks.map((network) => (
-                                    <View key={network.networks.id}>
-                                        <Heading size="sm">Network: {network.networks.name}</Heading>
-                                        {network.networks.baskets.length > 0 ? (
-                                            <VStack space="sm">
-                                                {network.networks.baskets.map(
-                                                    (labuddy) => (
-                                                        <LabuddyCard
-                                                            labuddy={labuddy}
-                                                            cost={formData.cost}
-                                                            perKilo={formData.perKilo}
-                                                            maxload={formData.maxload}
-                                                            key={labuddy.id}
-                                                        />
-                                                    )
-                                                )}
-                                            </VStack>) : (
-                                            <VStack space="sm"><Text>No Labuddies found</Text></VStack>
-                                        )}
-                                    </View>
-                                ))) : (<Text>No Networks found</Text>)}
+                                                Network: {network.networks.name}
+                                                
+                                                <Button 
+                                                size="md" 
+                                                variant="link"
+                                                onPress={() => {
+                                                    handleChange("network_id", network.networks.id)
+                                                    setShowModal3(true)}}
+                                                ref={ref}
+                                            >
+                                                <ButtonIcon as={EditIcon}/>
+                                            </Button>
+                                            <Button
+                                                size="md" 
+                                                variant="link" 
+                                                onPress={() => {
+                                                    handleChange("network_id", network.networks.id)
+                                                    console.log(network.networks.id)
+                                                    setShowModal4(true)}}>
+                                                <ButtonIcon as={TrashIcon}/>
+                                            </Button>
+
+                                            </Heading>
+                                            {network.networks.baskets.length >
+                                                0 ? (
+                                                <VStack space="sm">
+                                                    {network.networks.baskets.map(
+                                                        (labuddy) => (
+                                                            <div
+                                                                key={labuddy.id}
+                                                            >
+                                                                <Pressable
+                                                                    onPress={() =>
+                                                                        setShowModal5(
+                                                                            true
+                                                                        )
+                                                                    }
+                                                                    p="$5"
+                                                                    bg="$primary500"
+                                                                    $hover-bg="$primary400"
+                                                                    style={{
+                                                                        zIndex: 0
+                                                                    }}
+                                                                >
+                                                                    <LabuddyCard
+                                                                        labuddy={
+                                                                            labuddy
+                                                                        }
+                                                                        cost={
+                                                                            formData.cost
+                                                                        }
+                                                                        perKilo={
+                                                                            formData.perKilo
+                                                                        }
+                                                                        maxload={
+                                                                            formData.maxload
+                                                                        }
+                                                                    />
+                                                                </Pressable>
+                                                                <Modal
+                                                                    isOpen={
+                                                                        showModal5
+                                                                    }
+                                                                    onClose={() => {
+                                                                        setShowModal5(
+                                                                            false
+                                                                        );
+                                                                    }}
+                                                                    finalFocusRef={
+                                                                        ref
+                                                                    }
+                                                                    style={{
+                                                                        zIndex: 1000
+                                                                    }}
+                                                                >
+                                                                    <ModalBackdrop />
+                                                                    <ModalContent>
+                                                                        <ModalHeader>
+                                                                            <Heading size="lg">
+                                                                                {labuddy.users ==
+                                                                                    null
+                                                                                    ? "Labuddy"
+                                                                                    : labuddy.users.first_name}
+                                                                            </Heading>
+                                                                            <ModalCloseButton>
+                                                                                <Icon
+                                                                                    as={
+                                                                                        CloseIcon
+                                                                                    }
+                                                                                />
+                                                                            </ModalCloseButton>
+                                                                        </ModalHeader>
+                                                                        <ModalBody
+                                                                            style={{
+                                                                                zIndex: 1000
+                                                                            }}
+                                                                        >
+                                                                            <VStack space="md">
+                                                                                <Heading size="xs">
+                                                                                    Edit
+                                                                                    Labuddy
+                                                                                    Name
+                                                                                </Heading>
+                                                                                <Input
+                                                                                    variant="outline"
+                                                                                    size="md"
+                                                                                    isDisabled={
+                                                                                        false
+                                                                                    }
+                                                                                    isInvalid={
+                                                                                        false
+                                                                                    }
+                                                                                    isReadOnly={
+                                                                                        false
+                                                                                    }
+                                                                                >
+                                                                                    <InputField
+                                                                                        placeholder={
+                                                                                            labuddy ==
+                                                                                                null
+                                                                                                ? "Labuddy"
+                                                                                                : labuddy.users.first_name
+                                                                                        }
+                                                                                        onChangeText={(
+                                                                                            value
+                                                                                        ) =>
+                                                                                            handleChange(
+                                                                                                "labuddy_name",
+                                                                                                value
+                                                                                            )
+                                                                                        }
+                                                                                    />
+                                                                                </Input>
+                                                                                <Heading size="xs">
+                                                                                    Edit
+                                                                                    Max
+                                                                                    Weight
+                                                                                    for
+                                                                                    White
+                                                                                    Clothes
+                                                                                </Heading>
+                                                                                <Input
+                                                                                    variant="outline"
+                                                                                    size="md"
+                                                                                    isDisabled={
+                                                                                        false
+                                                                                    }
+                                                                                    isInvalid={
+                                                                                        false
+                                                                                    }
+                                                                                    isReadOnly={
+                                                                                        false
+                                                                                    }
+                                                                                >
+                                                                                    <InputField
+                                                                                        placeholder={labuddy.white_weight_limit.toString()}
+                                                                                        onChangeText={(
+                                                                                            value
+                                                                                        ) =>
+                                                                                            handleChange(
+                                                                                                "form_white_max",
+                                                                                                value
+                                                                                            )
+                                                                                        }
+                                                                                    />
+                                                                                </Input>
+                                                                                <Heading size="xs">
+                                                                                    Edit
+                                                                                    Max
+                                                                                    Weight
+                                                                                    for
+                                                                                    Colored
+                                                                                    Clothes
+                                                                                </Heading>
+                                                                                <Input
+                                                                                    variant="outline"
+                                                                                    size="md"
+                                                                                    isDisabled={
+                                                                                        false
+                                                                                    }
+                                                                                    isInvalid={
+                                                                                        false
+                                                                                    }
+                                                                                    isReadOnly={
+                                                                                        false
+                                                                                    }
+                                                                                >
+                                                                                    <InputField
+                                                                                        placeholder={labuddy.color_weight_limit.toString()}
+                                                                                        onChangeText={(
+                                                                                            value
+                                                                                        ) =>
+                                                                                            handleChange(
+                                                                                                "form_color_max",
+                                                                                                value
+                                                                                            )
+                                                                                        }
+                                                                                    />
+                                                                                </Input>
+
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    action="positive"
+                                                                                    borderWidth="$0"
+                                                                                    onPress={() => {
+                                                                                        updateSupabase(
+                                                                                            labuddy.id
+                                                                                        );
+                                                                                        setShowModal5(
+                                                                                            false
+                                                                                        );
+                                                                                    }}
+                                                                                >
+                                                                                    <ButtonText>
+                                                                                        Save
+                                                                                    </ButtonText>
+                                                                                </Button>
+                                                                            </VStack>
+                                                                        </ModalBody>
+                                                                        <ModalFooter></ModalFooter>
+                                                                    </ModalContent>
+                                                                </Modal>
+                                                            </div>
+                                                        )
+                                                    )}
+                                                </VStack>
+                                            ) : (
+                                                <VStack space="sm">
+                                                    <Text>
+                                                        No Labuddies found
+                                                    </Text>
+                                                </VStack>
+                                            )}
+                                        </View>
+                                    ))
+                                ) : (
+                                    <Text>No Networks found</Text>
+                                )}
                             </VStack>
                         </Box>
-
                     </HStack>
                     <Box
-                            w="100%"
-                            p="$4"
-                            borderWidth="$1"
-                            borderRadius="$lg"
-                            borderColor="$borderLight300"
-                            style={{ flex: 2, minWidth: 200 }}
-                        >
-                    <Button
-                        style={styles.logout}
-                        onPress={doLogout}
+                        w="100%"
+                        p="$4"
+                        borderWidth="$1"
+                        borderRadius="$lg"
+                        borderColor="$borderLight300"
+                        style={{ flex: 2, minWidth: 200 }}
                     >
-                        <ButtonText>Log out</ButtonText>
-                    </Button>
+                        <Button style={styles.logout} onPress={doLogout}>
+                            <ButtonText>Log out</ButtonText>
+                        </Button>
                     </Box>
                     <StatusBar style="auto" />
                 </VStack>
@@ -600,7 +1040,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff",
         alignItems: "center",
         justifyContent: "center",
-        flexDirection: 'column'
+        flexDirection: "column"
     },
     button: {
         backgroundColor: "#028391"
@@ -613,14 +1053,14 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff"
     },
     hstack: {
-        display: 'flex',
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        width: '100%',
+        display: "flex",
+        flexDirection: "row",
+        flexWrap: "wrap",
+        width: "100%"
     },
-    '@media (max-width: 900px)': {
+    "@media (max-width: 900px)": {
         hstack: {
-            flexDirection: 'column', // Stack vertically on smaller screens
-        },
-    },
+            flexDirection: "column" // Stack vertically on smaller screens
+        }
+    }
 });

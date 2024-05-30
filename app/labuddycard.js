@@ -132,14 +132,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
 
     return (
         <GluestackUIProvider config={config}>
-            <Pressable
-                    //onPress={() => setShowModal(true)}
-                    onPress={()=>router.push("labuddydetails")}
-                    p="$5"
-                    bg="$primary500"
-                    $hover-bg="$primary400"
-                    style = {{zIndex: 0}}
-                >
+
                     <Box style={{flex: 1}} p="$4" borderWidth="$1" h="$200"
                 borderRadius="$lg"
                 borderColor="$borderLight300">
@@ -161,7 +154,7 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload}) {
             </Box>
             
             <StatusBar style="auto" />
-            </Pressable>
+
                 <Modal
         isOpen={showModal}
         onClose={() => {

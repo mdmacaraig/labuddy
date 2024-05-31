@@ -63,6 +63,7 @@ export default function Dashboard() {
     const [showModal3, setShowModal3] = useState(false); // For editing a network
     const [showModal4, setShowModal4] = useState(false); // For deleting a network
     const [showModal5, setShowModal5] = useState(false); // For editing labuddy
+    const [showModal_LeaveGroup, setShowModal_LeaveGroup] = useState(false); // For leaving a labuddy group
     const [selectedLabuddy, setSelectedLabuddy] = useState();
     const ref = useRef(null);
     const ref2 = useRef(null);
@@ -134,6 +135,14 @@ export default function Dashboard() {
                 .update({ color_weight_limit: formData.form_color_max })
                 .eq("id", labuddyid)
                 .select("white_weight_limit, id");
+        }
+
+        if (formData.network_id != "") {
+            const { data: lbuddy, error: lbuddyError } = await supabase
+            .from("baskets")
+            .update({network_id: formData.network_id})
+            .eq("id", labuddyid)
+            .select("network_id, id")
         }
     }
 
@@ -289,10 +298,6 @@ export default function Dashboard() {
         }
     }
 
-    function forceRender() {
-        reRender(prev => !prev)
-    }
-
     async function editNetwork(formData) {
         try {
             const newName = formData["network_name"];
@@ -321,6 +326,20 @@ export default function Dashboard() {
         }
     }
 
+    async function leaveNetwork(formData) {
+        try {
+            const net_id = formData["network_id"];
+            const user_id = metadata.id
+            const { data, error } = await supabase
+                .from("network_users")
+                .delete()
+                .match( {network_id:net_id, user_id:user_id} );
+            await fetchNetworks();
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    
     if (loading) {
         return (
             <GluestackUIProvider config={config}>
@@ -487,7 +506,7 @@ export default function Dashboard() {
                                                                     )
                                                                 ) : (
                                                                     <SelectItem
-                                                                        label="No Labuddy Groups Found"
+                                                                        label="You are not part of any Labuddy Groups"
                                                                         value="None"
                                                                         isDisabled={
                                                                             true
@@ -803,6 +822,69 @@ export default function Dashboard() {
                             </ModalContent>
                         </Modal>
 
+                        {/*For leaving network*/}
+                        <Modal
+                            isOpen={showModal_LeaveGroup}
+                            onClose={() => {
+                                setShowModal_LeaveGroup(false);
+                            }}
+                            finalFocusRef={ref}
+                        >
+                            <ModalBackdrop />
+                            <ModalContent>
+                                <ModalHeader>
+                                    <Heading size="lg">
+                                        Leave Labuddy Group?
+                                    </Heading>
+                                    <ModalCloseButton>
+                                        <Icon as={CloseIcon} />
+                                    </ModalCloseButton>
+                                </ModalHeader>
+                                <ModalBody>
+                                    <KeyboardAvoidingView
+                                        behavior={
+                                            Platform.OS === "ios"
+                                                ? "padding"
+                                                : "height"
+                                        }
+                                        style={{ flex: 1 }}
+                                    >
+                                        <VStack space="md">
+                                            <Text>
+                                                Make sure all your Labuddies have left this group as well.
+                                                Otherwise, you will leave them here which is just sad 🥲
+                                            </Text>
+                                        </VStack>
+                                    </KeyboardAvoidingView>
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        action="secondary"
+                                        mr="$3"
+                                        onPress={() => {
+                                            setShowModal_LeaveGroup(false);
+                                        }}
+                                    >
+                                        <ButtonText>Cancel</ButtonText>
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        action="positive"
+                                        borderWidth="$0"
+                                        bg={styles.logout.backgroundColor}
+                                        onPress={() => {
+                                            leaveNetwork(formData);
+                                            setShowModal_LeaveGroup(false);
+                                        }}
+                                    >
+                                        <ButtonText>Leave</ButtonText>
+                                    </Button>
+                                </ModalFooter>
+                            </ModalContent>
+                        </Modal>
+
                         <Box
                             p="$4"
                             borderWidth="$1"
@@ -815,29 +897,45 @@ export default function Dashboard() {
                                     networks.map((network) => (
                                         <View key={network.networks.id}>
                                             <Heading size="sm">
-                                                Labuddy Group: {network.networks.name}
+                                                Labuddy Group: {network.networks.name} 
                                                 {
                                                     network.networks?.owner_id == metadata.id && 
                                                     <HStack space="sm">
-                                                    <Button 
-                                                        size="md" 
-                                                        variant="outline"
-                                                        onPress={() => {
-                                                            handleChange("network_id", network.networks.id)
-                                                            setShowModal3(true)}}
-                                                        ref={ref}
+                                                        <Button 
+                                                            size="md" 
+                                                            variant="outline"
+                                                            onPress={() => {
+                                                                handleChange("network_id", network.networks.id)
+                                                                setShowModal3(true)}}
+                                                            ref={ref}
+                                                            >
+                                                        <ButtonIcon as={EditIcon}/>
+                                                        </Button>
+                                                        <Button
+                                                            size="md" 
+                                                            variant="outline" 
+                                                            onPress={() => {
+                                                                handleChange("network_id", network.networks.id)
+                                                                console.log(network.networks.id)
+                                                                setShowModal4(true)}}>
+                                                            <ButtonIcon as={TrashIcon}/>
+                                                        </Button>
+                                                    </HStack>
+                                                }
+                                                {
+                                                    network.networks?.owner_id != metadata.id && 
+                                                    <HStack space="sm">
+                                                        <Button
+                                                            size="md" 
+                                                            variant="outline"
+                                                            onPress={() => {
+                                                                handleChange("network_id", network.networks.id)
+                                                                setShowModal_LeaveGroup(true)}}
+                                                            ref={ref}
                                                         >
-                                                    <ButtonIcon as={EditIcon}/>
-                                                    </Button>
-                                                    <Button
-                                                        size="md" 
-                                                        variant="outline" 
-                                                        onPress={() => {
-                                                            handleChange("network_id", network.networks.id)
-                                                            console.log(network.networks.id)
-                                                            setShowModal4(true)}}>
-                                                        <ButtonIcon as={TrashIcon}/>
-                                                    </Button>
+                                                        <ButtonIcon as={CloseIcon}/>
+
+                                                        </Button>
                                                     </HStack>
                                                 }
                                             </Heading>
@@ -939,10 +1037,10 @@ export default function Dashboard() {
                         <ModalContent>
                             <ModalHeader>
                                 <Heading size="lg">
-                                    {selectedLabuddy.users ==
+                                    {"Edit " + (selectedLabuddy.users ==
                                         null
                                         ? "Labuddy"
-                                        : selectedLabuddy.users.first_name}
+                                        : selectedLabuddy.users.first_name)}
                                 </Heading>
                                 <ModalCloseButton>
                                     <Icon
@@ -959,8 +1057,6 @@ export default function Dashboard() {
                             >
                                 <VStack space="md">
                                     <Heading size="xs">
-                                        Edit
-                                        Labuddy
                                         Name
                                     </Heading>
                                     <Input
@@ -994,12 +1090,7 @@ export default function Dashboard() {
                                         />
                                     </Input>
                                     <Heading size="xs">
-                                        Edit
-                                        Max
-                                        Weight
-                                        for
-                                        White
-                                        Clothes
+                                        Max Weight for White Clothes
                                     </Heading>
                                     <Input
                                         variant="outline"
@@ -1027,12 +1118,7 @@ export default function Dashboard() {
                                         />
                                     </Input>
                                     <Heading size="xs">
-                                        Edit
-                                        Max
-                                        Weight
-                                        for
-                                        Colored
-                                        Clothes
+                                        Max Weight for Colored Clothes
                                     </Heading>
                                     <Input
                                         variant="outline"
@@ -1060,6 +1146,93 @@ export default function Dashboard() {
                                         />
                                     </Input>
 
+                                    <Heading size="xs">
+                                        Labuddy Group
+                                    </Heading>
+                                    <Select
+                                        onValueChange={(
+                                            network
+                                        ) => {
+                                            handleChange(
+                                                "network_id",
+                                                network
+                                            );
+                                        }}
+                                    >
+                                        <SelectTrigger
+                                            variant="outline"
+                                            size="md"
+                                        >
+                                            <SelectInput placeholder="Same Labuddy Group" />
+                                            <SelectIcon mr="$3">
+                                                <Icon
+                                                    as={
+                                                        ChevronDownIcon
+                                                    }
+                                                />
+                                            </SelectIcon>
+                                        </SelectTrigger>
+                                        <SelectPortal>
+                                            <SelectBackdrop />
+                                            <SelectContent>
+                                                <SelectDragIndicatorWrapper>
+                                                    <SelectDragIndicator />
+                                                </SelectDragIndicatorWrapper>
+                                                {networks.length >
+                                                    0 ? (
+                                                    networks.map(
+                                                        (
+                                                            network
+                                                        ) => (
+                                                            <SelectItem
+                                                                label={
+                                                                    network
+                                                                        .networks
+                                                                        .name
+                                                                }
+                                                                value={
+                                                                    network
+                                                                        .networks
+                                                                        .id
+                                                                }
+                                                                key={
+                                                                    network
+                                                                        .networks
+                                                                        .id
+                                                                }
+                                                            />
+                                                        )
+                                                    )
+                                                ) : (
+                                                    <SelectItem
+                                                        label="You are not part of any Labuddy Groups."
+                                                        value="None"
+                                                        isDisabled={
+                                                            true
+                                                        }
+                                                    />
+                                                )}
+                                            </SelectContent>
+                                        </SelectPortal>
+                                    </Select>
+
+                                    <Button
+                                        size="sm"
+                                        action="positive"
+                                        borderWidth="$0"
+                                        bg={styles.logout.backgroundColor}
+                                        onPress={async () => {
+                                            const {data: lbuddy, error: err} = await supabase
+                                            .from("baskets")
+                                            .update({network_id: null})
+                                            .eq("id", selectedLabuddy.id)
+                                            if (err) console.log(err)
+                                        }}
+                                    >
+                                        <ButtonText>
+                                            Remove from Current Group
+                                        </ButtonText>
+                                    </Button>
                                     <Button
                                         size="sm"
                                         action="positive"

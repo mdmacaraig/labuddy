@@ -357,11 +357,14 @@ export default function Dashboard() {
                                             >
                                                 <VStack space="md">
                                                     <Text>
-                                                        Add your labuddies here.
-                                                        To add a labuddy connect
-                                                        to the Access Point of
-                                                        the Labuddy you want to
-                                                        connect to.
+                                                        Add your Labuddies here.
+                                                        To add a Labuddy:
+                                                        <Text size="sm">
+                                                        {'\n'}
+                                                        {'\u2022'} Connect to the Access Point of the Labuddy.
+                                                        {'\n\u2022'} Enter the wifi credentials of the network that you want your Labuddy to connect to below.
+                                                        {'\n\u2022'} Select the Labuddy Group you want the Labuddy to be in.
+                                                        </Text>
                                                     </Text>
                                                     <Input
                                                         variant="outline"
@@ -416,7 +419,7 @@ export default function Dashboard() {
                                                             variant="outline"
                                                             size="md"
                                                         >
-                                                            <SelectInput placeholder="Select Network" />
+                                                            <SelectInput placeholder="Select Labuddy Group" />
                                                             <SelectIcon mr="$3">
                                                                 <Icon
                                                                     as={
@@ -458,7 +461,7 @@ export default function Dashboard() {
                                                                     )
                                                                 ) : (
                                                                     <SelectItem
-                                                                        label="No Networks Found"
+                                                                        label="No Labuddy Groups Found"
                                                                         value="None"
                                                                         isDisabled={
                                                                             true
@@ -501,7 +504,7 @@ export default function Dashboard() {
                                     style={styles.button}
                                     onPress={() => setShowModal2(true)}
                                 >
-                                    <ButtonText>Create Network </ButtonText>
+                                    <ButtonText>Create Labuddy Group </ButtonText>
                                     <ButtonIcon as={AddIcon} />
                                 </Button>
                                 <Modal
@@ -516,7 +519,7 @@ export default function Dashboard() {
                                     <ModalContent>
                                         <ModalHeader>
                                             <Heading size="lg">
-                                                Create Network
+                                                Create Labuddy Group
                                             </Heading>
                                             <ModalCloseButton>
                                                 <Icon as={CloseIcon} />
@@ -533,7 +536,7 @@ export default function Dashboard() {
                                             >
                                                 <VStack space="md">
                                                     <Text>
-                                                        Create a network for
+                                                        Create a Labuddy Group for
                                                         Labuddies to connect to!
                                                         You will see all
                                                         Labuddies connected, and
@@ -548,7 +551,7 @@ export default function Dashboard() {
                                                         isReadOnly={false}
                                                     >
                                                         <InputField
-                                                            placeholder="Network Name"
+                                                            placeholder="Labuddy Group Name"
                                                             onChangeText={(
                                                                 value
                                                             ) => {
@@ -785,7 +788,7 @@ export default function Dashboard() {
                                     networks.map((network) => (
                                         <View key={network.networks.id}>
                                             <Heading size="sm">
-                                                Network: {network.networks.name}
+                                                Labuddy Group: {network.networks.name}
                                                 
                                                 <HStack space="sm">
 
@@ -863,7 +866,7 @@ export default function Dashboard() {
                                         </View>
                                     ))
                                 ) : (
-                                    <Text>No Networks found</Text>
+                                    <Text>No Labuddy Groups found</Text>
                                 )}
                             </VStack>
                         </Box>

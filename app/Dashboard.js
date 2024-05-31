@@ -649,7 +649,7 @@ export default function Dashboard() {
                             <ModalContent>
                                 <ModalHeader>   
                                     <Heading size="lg">
-                                        Edit Network
+                                        Edit Labuddy Group
                                     </Heading>
                                     <ModalCloseButton>
                                         <Icon as={CloseIcon} />
@@ -666,7 +666,7 @@ export default function Dashboard() {
                                     >
                                         <VStack space="md">
                                             <Text>
-                                                Edit your network here.
+                                                Edit your group here.
                                             </Text>
                                             <Input
                                                 variant="outline"
@@ -676,7 +676,7 @@ export default function Dashboard() {
                                                 isReadOnly={false}
                                             >
                                                 <InputField
-                                                    placeholder="New Network Name"
+                                                    placeholder="New Group Name"
                                                     onChangeText={(value) => {
                                                         handleChange(
                                                             "network_name",
@@ -727,7 +727,7 @@ export default function Dashboard() {
                             <ModalContent>
                                 <ModalHeader>   
                                     <Heading size="lg">
-                                        Delete network?
+                                        Delete Labuddy Group?
                                     </Heading>
                                     <ModalCloseButton>
                                         <Icon as={CloseIcon} />
@@ -744,7 +744,7 @@ export default function Dashboard() {
                                     >
                                         <VStack space="md">
                                             <Text>
-                                                You will be deleting this network forever.
+                                                You will be deleting this group forever.
                                             </Text>
                                         </VStack>
                                     </KeyboardAvoidingView>
@@ -776,6 +776,7 @@ export default function Dashboard() {
                                 </ModalFooter>
                             </ModalContent>
                         </Modal>
+
                         <Box
                             p="$4"
                             borderWidth="$1"
@@ -789,30 +790,30 @@ export default function Dashboard() {
                                         <View key={network.networks.id}>
                                             <Heading size="sm">
                                                 Labuddy Group: {network.networks.name}
-                                                
-                                                <HStack space="sm">
-
-                                                <Heading size="sm"></Heading>
-                                                <Button 
-                                                size="md" 
-                                                variant="outline"
-                                                onPress={() => {
-                                                    handleChange("network_id", network.networks.id)
-                                                    setShowModal3(true)}}
-                                                ref={ref}
-                                            >
-                                                <ButtonIcon as={EditIcon}/>
-                                            </Button>
-                                            <Button
-                                                size="md" 
-                                                variant="outline" 
-                                                onPress={() => {
-                                                    handleChange("network_id", network.networks.id)
-                                                    console.log(network.networks.id)
-                                                    setShowModal4(true)}}>
-                                                <ButtonIcon as={TrashIcon}/>
-                                            </Button>
-                                            </HStack>
+                                                {
+                                                    network.networks?.owner_id == metadata.id && 
+                                                    <HStack space="sm">
+                                                    <Button 
+                                                        size="md" 
+                                                        variant="outline"
+                                                        onPress={() => {
+                                                            handleChange("network_id", network.networks.id)
+                                                            setShowModal3(true)}}
+                                                        ref={ref}
+                                                        >
+                                                    <ButtonIcon as={EditIcon}/>
+                                                    </Button>
+                                                    <Button
+                                                        size="md" 
+                                                        variant="outline" 
+                                                        onPress={() => {
+                                                            handleChange("network_id", network.networks.id)
+                                                            console.log(network.networks.id)
+                                                            setShowModal4(true)}}>
+                                                        <ButtonIcon as={TrashIcon}/>
+                                                    </Button>
+                                                    </HStack>
+                                                }
                                             </Heading>
                                             {network.networks.baskets.length >
                                                 0 ? (

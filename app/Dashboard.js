@@ -22,6 +22,7 @@ import {
     ButtonIcon,
     AddIcon,
     CloseIcon,
+    CloseCircleIcon,
     EditIcon,
     TrashIcon,
     Modal,
@@ -93,11 +94,14 @@ export default function Dashboard() {
     }
 
     function calcNumLoads(weight, maxload) {
-        if (Math.floor(weight / maxload) == weight / maxload) {
-            return weight / maxload;
-        } else {
-            return weight / maxload + 1;
-        }
+        if (maxload === 0 || maxload == null || isNaN(maxload)) 
+            return 0;
+        
+        const ret = weight / maxload;
+        if (Math.floor(ret) == ret) 
+            return ret;
+        else 
+            return ret + 1;
     }
 
     const handleChange = (name, value) => {
@@ -1128,18 +1132,19 @@ export default function Dashboard() {
                             style={{ flex: 2, minWidth: 200 }}
                         >
                             <VStack space="xl">
-                                {networks.length > 0 ? (
+                                {networks.length >   0 ? (
                                     networks.map((network) => (
                                         <View key={network.networks.id}>
+                                            <Box flexDirection="row" alignItems="center" justifyContent="space-between">
                                             <Heading size="sm">
-                                                Labuddy Group: {network.networks.name} {'   '}
+                                                Labuddy Group: {network.networks.name} 
+                                            </Heading>
                                                 {
                                                     network.networks?.owner_id == metadata.id && 
-                                                    <View style={{alignItems:'flex-end', flex: 1}}>
-                                                    <HStack space="sm">
+                                                    <HStack space="xs" justifyContent="flex-end">
                                                         <Button 
-                                                            size="xs" 
-                                                            variant="outline"
+                                                            size="md" 
+                                                            variant="link"
                                                             onPress={() => {
                                                                 handleChange("network_id", network.networks.id)
                                                                 setShowModal3(true)}}
@@ -1148,8 +1153,8 @@ export default function Dashboard() {
                                                         <ButtonIcon as={EditIcon}/>
                                                         </Button>
                                                         <Button
-                                                            size="xs" 
-                                                            variant="outline" 
+                                                            size="md" 
+                                                            variant="link" 
                                                             onPress={() => {
                                                                 handleChange("network_id", network.networks.id)
                                                                 console.log(network.networks.id)
@@ -1161,28 +1166,30 @@ export default function Dashboard() {
                                                 }
                                                 {
                                                     network.networks?.owner_id != metadata.id && 
-                                                    <HStack space="sm">
+                                                    <HStack space="sm" justifyContent="flex-end">
                                                         <Button
-                                                            size="xs" 
-                                                            variant="outline"
+                                                            size="md" 
+                                                            variant="link"
                                                             onPress={() => {
                                                                 handleChange("network_id", network.networks.id)
                                                                 setShowModal_LeaveGroup(true)}}
                                                             ref={ref}
                                                         >
-                                                        <ButtonIcon as={CloseIcon}/>
+                                                        <ButtonIcon as={CloseCircleIcon}/>
 
                                                         </Button>
                                                     </HStack>
                                                 }
-                                            </Heading>
-
-                                            <Text size="xs" color="gray" bold="true">Total Weight (White): {network.networks.whitesum} kg, Total Weight (Colored): {network.networks.colorsum} kg, Cost:{" "}
+                                            </Box>
+                                            <Text size="xs" color="gray" bold="true">
+                                                Total Weight (White): {network.networks.whitesum} kg{"\n"}
+                                                Total Weight (Colored): {network.networks.colorsum} kg{"\n"}
+                                                Cost:{" "}
                                                 {formData.perKilo
                                                     ? formData.cost * (network.networks.whitesum + network.networks.colorsum)
                                                     : Math.floor(calcNumLoads(network.networks.whitesum, formData.maxload)) *
-                                                    formData.cost + Math.floor(calcNumLoads(network.networks.colorsum, formData.maxload)) *
-                                                    formData.cost}
+                                                    formData.cost  + Math.floor(calcNumLoads(network.networks.colorsum, formData.maxload)) *
+                                                    formData.cost }
                                             </Text>
                                             {network.networks.baskets.length >
                                                 0 ? (

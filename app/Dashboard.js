@@ -63,6 +63,7 @@ export default function Dashboard() {
     const [showModal3, setShowModal3] = useState(false); // For editing a network
     const [showModal4, setShowModal4] = useState(false); // For deleting a network
     const [showModal5, setShowModal5] = useState(false); // For editing labuddy
+    const [showModal6, setShowModal6] = useState(false); // For joining a network
     const [selectedLabuddy, setSelectedLabuddy] = useState();
     const ref = useRef(null);
     const ref2 = useRef(null);
@@ -591,6 +592,92 @@ export default function Dashboard() {
                                         </ModalFooter>
                                     </ModalContent>
                                 </Modal>
+                                <Button
+                                    style={styles.outlinebutton}
+                                    onPress={() => setShowModal6(true)}
+                                >
+                                    <ButtonText color="#028391">Join Labuddy Group </ButtonText>
+                                    
+                                </Button>
+                                <Modal
+                                    isOpen={showModal6}
+                                    onClose={() => {
+                                        setShowModal6(false);
+                                        handleChange("network_name", "");
+                                    }}
+                                    finalFocusRef={ref}
+                                >
+                                    <ModalBackdrop />
+                                    <ModalContent>
+                                        <ModalHeader>
+                                            <Heading size="lg">
+                                                Join Labuddy Group
+                                            </Heading>
+                                            <ModalCloseButton>
+                                                <Icon as={CloseIcon} />
+                                            </ModalCloseButton>
+                                        </ModalHeader>
+                                        <ModalBody>
+                                            <KeyboardAvoidingView
+                                                behavior={
+                                                    Platform.OS === "ios"
+                                                        ? "padding"
+                                                        : "height"
+                                                }
+                                                style={{ flex: 1 }}
+                                            >
+                                                <VStack space="md">
+                                                    <Text>
+                                                        test
+                                                    </Text>
+                                                    <Input
+                                                        variant="outline"
+                                                        size="md"
+                                                        isDisabled={false}
+                                                        isInvalid={false}
+                                                        isReadOnly={false}
+                                                    >
+                                                        <InputField
+                                                            placeholder="Labuddy Group Name"
+                                                            onChangeText={(
+                                                                value
+                                                            ) => {
+                                                                handleChange(
+                                                                    "network_name",
+                                                                    value
+                                                                );
+                                                            }}
+                                                        />
+                                                    </Input>
+                                                </VStack>
+                                            </KeyboardAvoidingView>
+                                        </ModalBody>
+                                        <ModalFooter>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                action="secondary"
+                                                mr="$3"
+                                                onPress={() => {
+                                                    setShowModal6(false);
+                                                }}
+                                            >
+                                                <ButtonText>Cancel</ButtonText>
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                action="positive"
+                                                borderWidth="$0"
+                                                onPress={() => {
+                                                    createNetwork(formData);
+                                                    setShowModal6(false);
+                                                }}
+                                            >
+                                                <ButtonText>Add</ButtonText>
+                                            </Button>
+                                        </ModalFooter>
+                                    </ModalContent>
+                                </Modal>
                                 <HStack space="md">
                                     <Text size="sm">Cost per kilo</Text>
                                     <Switch
@@ -1064,6 +1151,12 @@ const styles = StyleSheet.create({
     },
     button: {
         backgroundColor: "#028391"
+    },
+    outlinebutton: {
+        backgroundColor: "white",
+        borderWidth: 1,
+        borderRadius: "$lg",
+        borderColor:"#028391"
     },
     logout: {
         backgroundColor: "#C70039"

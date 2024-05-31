@@ -24,6 +24,7 @@ import {
     CloseIcon,
     CloseCircleIcon,
     EditIcon,
+    RemoveIcon,
     TrashIcon,
     Modal,
     ModalBackdrop,
@@ -54,6 +55,7 @@ import { useNavigation, router } from "expo-router";
 import LabuddyCard from "./labuddycard";
 import supabase from "../lib/supabase";
 import axios from "axios";
+import { Dropdown } from 'react-native-element-dropdown';
 
 export default function Dashboard() {
     const [metadata, setMetadata] = useState(null);
@@ -67,9 +69,11 @@ export default function Dashboard() {
     const [showModal4, setShowModal4] = useState(false); // For deleting a network
     const [showModal5, setShowModal5] = useState(false); // For editing labuddy
     const [showModal_LeaveGroup, setShowModal_LeaveGroup] = useState(false); // For leaving a labuddy group
-    const [showModalJoin, setShowModalJoin] = useState(false);
+    const [showModalJoin, setShowModalJoin] = useState(false); // For requesting to join a labuddy group
+    const [showModal_ViewReqs, setShowModal_ViewReqs] = useState(false); // For viewing incoming labuddy group requests
     const [selectedLabuddy, setSelectedLabuddy] = useState();
     const [reqUsername, setRequestUsername] = useState();
+    const [buttonsVisible, setbuttonsVisible] = useState(false);
     const ref = useRef(null);
     const ref2 = useRef(null);
 
@@ -274,19 +278,24 @@ export default function Dashboard() {
         //get user data
         const myNetworks = networks.map((x)=>x.networks)
         const myOwnedNetworks = myNetworks.filter(checkOwned)
-        console.log(myOwnedNetworks.map((x)=>x.id))
         const { data: userdata, error: userError } =
             await supabase.auth.getUser();
         //get network that user can access
-        const { data: reqs, error: networkError } = await supabase
-            .from("network_requests")
-            .select(`networks(id, name), users (id, first_name, last_name)`)
-            .eq("network_id", myOwnedNetworks.map((x)=>x.id))
-        if (networkError){ console.log(networkError)}
-        
+        const allReqs = [];
+        console.log("owned:", myOwnedNetworks.map((x)=>x.id));
+        if (myOwnedNetworks != []) {
+            myOwnedNetworks.map(async (x) => {
+            const { data: reqs, error: networkError } = await supabase
+                .from("network_requests")
+                .select(`networks(id, name), users(id, first_name, last_name)`)
+                .eq("network_id", x.id)
+                if (networkError){ console.log(networkError)}
+                else allReqs.push(...reqs)
+            })
+        }
 
-        setRequests(reqs || []);
-        console.log("requests:", requests);
+        setRequests(allReqs || []);
+        console.log("allReqs:", allReqs);
     }
 
     const doLogout = async (event) => {
@@ -351,8 +360,7 @@ export default function Dashboard() {
             const { data, error } = await supabase
                 .from("network_requests")
                 .delete()
-                .eq('network_id', net)
-                .eq('user_id', user)
+                .match( {network_id: net, user_id: user})
             if (error){
                 console.log(error)
                 Alert.alert('Error', "Can't delete request")
@@ -397,8 +405,9 @@ export default function Dashboard() {
     }
 
     function checkOwned(nw){
-        return nw.owner_id == metadata.id
+        return nw.owner_id == metadata.id;
     }
+
     async function joinNetwork(formData) {
         const req = formData.network_req
         const myNetworks = networks.map((x)=>x.networks)
@@ -407,29 +416,30 @@ export default function Dashboard() {
             const { data, error } = await supabase
                 .from("networks")
                 .select()
-                .eq('name', req)
+                .match({name:req})
             const req_network_id = data[0].id;
             console.log(myNetworks.map((x)=>x.owner_id))
             console.log(req_network_id);
             if(myNetworks.map((x)=>x.id).includes(req_network_id)){
                 console.log('Already a part of this Labuddy Group')
-                Alert.alert('Error','Already a part of this Labuddy Group')
+                Alert.alert('Error','Already a part of this Labuddy Group.')
             }
             else{
             const { data: network_user, error: networkUserError } =
                 await supabase
                     .from("network_requests")
                     .insert([
-                        { network_id: req_network_id, user_id: metadata.id, is_labuddy: false }
+                        { network_id: req_network_id, user_id: metadata.id }
                     ])
                     .select();
                 if (networkUserError){
+                    console.log(networkUserError)
                     console.log('Already requested')
-                    Alert.alert('Error','Please wait for the owner of the Labddy Group to entertain your request.')
+                    Alert.alert('Error','You already have a pending request to this Labuddy Group. Please wait for the owner to entertain your request.')
                 }
                 }
         } catch (e) {
-            Alert.alert("Error", "Labuddy Group not found");
+            Alert.alert("Error", "Labuddy Group not found.");
             console.log(e);
         }
         //console.log(networks.map((x)=>x.networks.name))
@@ -477,6 +487,10 @@ export default function Dashboard() {
             console.log(e);
         }
     }
+
+    const toggleDropDown = () => {
+        setbuttonsVisible(!buttonsVisible);
+      };
     
     if (loading) {
         return (
@@ -501,17 +515,58 @@ export default function Dashboard() {
                             style={{ flex: 1, minWidth: 200 }}
                         >
                             <VStack space="xl" w="auto">
-                                <Heading>
-                                    {metadata?.user_metadata?.first_name}'s
-                                    Labuddies
-                                </Heading>
-                                <Button
-                                    style={styles.button}
-                                    onPress={() => setShowModal(true)}
-                                >
-                                    <ButtonText>Add Labuddy </ButtonText>
-                                    <ButtonIcon as={AddIcon} />
-                                </Button>
+                                <Box flexDirection="row" alignItems="center" justifyContent="space-between">
+                                    <Heading>
+                                        {metadata?.user_metadata?.first_name}'s
+                                        Labuddies
+                                    </Heading>
+                                    <Button
+                                        style={styles.button}
+                                        onPress={ () => toggleDropDown() }
+                                        >
+                                        {
+                                            (!buttonsVisible &&
+                                            <ButtonIcon as={AddIcon}/>)
+                                        }
+                                        {
+                                            (buttonsVisible &&
+                                            <ButtonIcon as={RemoveIcon}/>)
+                                        }
+                                    </Button>
+                                </Box>
+                                { 
+                                    buttonsVisible &&
+                                    <>
+                                        <Button
+                                            style={styles.button}
+                                            onPress={() => setShowModal(true)}
+                                        >
+                                            <ButtonText>Add Labuddy </ButtonText>
+                                        </Button>
+                                        <Button
+                                            style={styles.button}
+                                            onPress={() => setShowModal2(true)}
+                                        >
+                                            <ButtonText>Create Labuddy Group </ButtonText>
+                                        </Button>
+                                        <Button
+                                            style={styles.outlinebutton}
+                                            onPress={() => {setShowModalJoin(true);
+                                                handleChange("network_req", "");
+                                            }}
+                                        >
+                                            <ButtonText color="#028391">Join Labuddy Group</ButtonText>
+                                        </Button>
+                                        <Button
+                                            style={styles.outlinebutton}
+                                            onPress={() => {setShowModal_ViewReqs(true);}}
+                                        >
+                                            <ButtonText color="#028391">View Incoming Requests</ButtonText>
+                                        </Button>
+                                    </>
+                                }
+
+                                {/*Modal for ADDING LABUDDY*/}
                                 <Modal
                                     isOpen={showModal}
                                     onClose={() => {
@@ -683,13 +738,8 @@ export default function Dashboard() {
                                         </ModalFooter>
                                     </ModalContent>
                                 </Modal>
-                                <Button
-                                    style={styles.button}
-                                    onPress={() => setShowModal2(true)}
-                                >
-                                    <ButtonText>Create Labuddy Group </ButtonText>
-                                    <ButtonIcon as={AddIcon} />
-                                </Button>
+                                
+                                {/*Modal for CREATE GROUP*/}
                                 <Modal
                                     isOpen={showModal2}
                                     onClose={() => {
@@ -774,15 +824,9 @@ export default function Dashboard() {
                                         </ModalFooter>
                                     </ModalContent>
                                 </Modal>
-                                <Button
-                                    style={styles.outlinebutton}
-                                    onPress={() => {setShowModalJoin(true);
-                                        handleChange("network_req", "");
-                                    }}
-                                >
-                                    <ButtonText color="#028391">Join Labuddy Group</ButtonText>
-                                    </Button>
-                                    <Modal
+                                
+                                {/*Modal for JOINING GROUP*/}
+                                <Modal
                                     isOpen={showModalJoin}
                                     onClose={() => {
                                         setShowModalJoin(false);
@@ -811,7 +855,7 @@ export default function Dashboard() {
                                             >
                                                 <VStack space="md">
                                                     <Text>
-                                                        Join a Labuddy Group to see other Labuddies in a household! Enter the name of the Labuddy Group you want to join.
+                                                        Request to join a Labuddy Group to see other Labuddies in a household! Enter the name of the Labuddy Group you want to join.
                                                     </Text>
                                                     <Input
                                                         variant="outline"
@@ -856,14 +900,287 @@ export default function Dashboard() {
                                                     setShowModalJoin(false);
                                                 }}
                                             >
-                                                <ButtonText>Join</ButtonText>
+                                                <ButtonText>Request to Join</ButtonText>
+                                            </Button>
+                                        </ModalFooter>
+                                    </ModalContent>
+                                </Modal>
+
+                                {/*Modal for EDITING GROUP*/}
+                                <Modal
+                                    isOpen={showModal3}
+                                    onClose={() => {
+                                        setShowModal3(false);
+                                    }}
+                                    finalFocusRef={ref}
+                                >
+                                    <ModalBackdrop />
+                                    <ModalContent>
+                                        <ModalHeader>
+                                            <Heading size="lg">
+                                                Edit Labuddy Group
+                                            </Heading>
+                                            <ModalCloseButton>
+                                                <Icon as={CloseIcon} />
+                                            </ModalCloseButton>
+                                        </ModalHeader>
+                                        <ModalBody>
+                                            <KeyboardAvoidingView
+                                                behavior={
+                                                    Platform.OS === "ios"
+                                                        ? "padding"
+                                                        : "height"
+                                                }
+                                                style={{ flex: 1 }}
+                                            >
+                                                <VStack space="md">
+                                                    <Text>
+                                                        Edit your group here.
+                                                    </Text>
+                                                    <Input
+                                                        variant="outline"
+                                                        size="md"
+                                                        isDisabled={false}
+                                                        isInvalid={false}
+                                                        isReadOnly={false}
+                                                    >
+                                                        <InputField
+                                                            placeholder="New Group Name"
+                                                            onChangeText={(value) => {
+                                                                handleChange(
+                                                                    "network_name",
+                                                                    value
+                                                                );
+                                                            }}
+                                                        />
+                                                    </Input>
+                                                </VStack>
+                                            </KeyboardAvoidingView>
+                                        </ModalBody>
+                                        <ModalFooter>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                action="secondary"
+                                                mr="$3"
+                                                onPress={() => {
+                                                    setShowModal3(false);
+                                                }}
+                                            >
+                                                <ButtonText>Cancel</ButtonText>
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                action="positive"
+                                                borderWidth="$0"
+                                                onPress={() => {
+                                                    editNetwork(formData);
+                                                    setShowModal3(false);
+                                                }}
+                                            >
+                                                <ButtonText>Edit</ButtonText>
+                                            </Button>
+                                        </ModalFooter>
+                                    </ModalContent>
+                                </Modal>
+
+                                {/*Modal for CONFIRMING GROUP DELETION*/}
+                                <Modal
+                                    isOpen={showModal4}
+                                    onClose={() => {
+                                        setShowModal4(false);
+                                    }}
+                                    finalFocusRef={ref}
+                                >
+                                    <ModalBackdrop />
+                                    <ModalContent>
+                                        <ModalHeader>
+                                            <Heading size="lg">
+                                                Delete Labuddy Group?
+                                            </Heading>
+                                            <ModalCloseButton>
+                                                <Icon as={CloseIcon} />
+                                            </ModalCloseButton>
+                                        </ModalHeader>
+                                        <ModalBody>
+                                            <KeyboardAvoidingView
+                                                behavior={
+                                                    Platform.OS === "ios"
+                                                        ? "padding"
+                                                        : "height"
+                                                }
+                                                style={{ flex: 1 }}
+                                            >
+                                                <VStack space="md">
+                                                    <Text>
+                                                        You will be deleting this group forever.
+                                                    </Text>
+                                                </VStack>
+                                            </KeyboardAvoidingView>
+                                        </ModalBody>
+                                        <ModalFooter>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                action="secondary"
+                                                mr="$3"
+                                                onPress={() => {
+                                                    setShowModal4(false);
+                                                }}
+                                            >
+                                                <ButtonText>Cancel</ButtonText>
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                action="positive"
+                                                borderWidth="$0"
+                                                bg={styles.logout.backgroundColor}
+                                                onPress={() => {
+                                                    deleteNetwork(formData);
+                                                    setShowModal4(false);
+                                                }}
+                                            >
+                                                <ButtonText>Delete</ButtonText>
+                                            </Button>
+                                        </ModalFooter>
+                                    </ModalContent>
+                                </Modal>
+
+                                {/*Modal for LEAVING GROUP*/}
+                                <Modal
+                                    isOpen={showModal_LeaveGroup}
+                                    onClose={() => {
+                                        setShowModal_LeaveGroup(false);
+                                    }}
+                                    finalFocusRef={ref}
+                                >
+                                    <ModalBackdrop />
+                                    <ModalContent>
+                                        <ModalHeader>
+                                            <Heading size="lg">
+                                                Leave Labuddy Group?
+                                            </Heading>
+                                            <ModalCloseButton>
+                                                <Icon as={CloseIcon} />
+                                            </ModalCloseButton>
+                                        </ModalHeader>
+                                        <ModalBody>
+                                            <KeyboardAvoidingView
+                                                behavior={
+                                                    Platform.OS === "ios"
+                                                        ? "padding"
+                                                        : "height"
+                                                }
+                                                style={{ flex: 1 }}
+                                            >
+                                                <VStack space="md">
+                                                    <Text>
+                                                        Make sure all your Labuddies have left this group as well.
+                                                        Otherwise, you will leave them here which is just sad 🥲
+                                                    </Text>
+                                                </VStack>
+                                            </KeyboardAvoidingView>
+                                        </ModalBody>
+                                        <ModalFooter>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                action="secondary"
+                                                mr="$3"
+                                                onPress={() => {
+                                                    setShowModal_LeaveGroup(false);
+                                                }}
+                                            >
+                                                <ButtonText>Cancel</ButtonText>
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                action="positive"
+                                                borderWidth="$0"
+                                                bg={styles.logout.backgroundColor}
+                                                onPress={() => {
+                                                    leaveNetwork(formData);
+                                                    setShowModal_LeaveGroup(false);
+                                                }}
+                                            >
+                                                <ButtonText>Leave</ButtonText>
                                             </Button>
                                         </ModalFooter>
                                     </ModalContent>
                                 </Modal>
                                 
+                                {/*Modal for CONFIRMING GROUP DELETION*/}
+                                <Modal
+                                    isOpen={showModal_ViewReqs}
+                                    onClose={() => {
+                                        setShowModal_ViewReqs(false);
+                                    }}
+                                    finalFocusRef={ref}
+                                >
+                                    <ModalBackdrop />
+                                    <ModalContent>
+                                        <ModalHeader>
+                                            <Heading size="lg">
+                                                { requests.length > 0 ? 
+                                                    "People want to join your Labuddy Groups" : 
+                                                    "No join requests." }                                               
+                                            </Heading>
+                                            <ModalCloseButton>
+                                                <Icon as={CloseIcon} />
+                                            </ModalCloseButton>
+                                        </ModalHeader>
+                                        <ModalBody>
+                                            <KeyboardAvoidingView
+                                                behavior={
+                                                    Platform.OS === "ios"
+                                                        ? "padding"
+                                                        : "height"
+                                                }
+                                                style={{ flex: 1 }}
+                                            >
+                                                {requests.length > 0 ? (
+                                                    requests.map((req) => (<View key={req.users.id + req.networks.id}><Box
+                                                        p="$4"
+                                                        borderWidth="$1"
+                                                        borderRadius="$lg"
+                                                        borderColor="$borderLight300"
+                                                        style={{ flex: 1, minWidth: 200 }}
+                                                    ><VStack space="xs"><Text>{req.users.first_name} {req.users.last_name} wants to join {req.networks.name}</Text><HStack space="md">
+                                                        <Button action="positive" size="xs" bg="green" 
+                                                            onPress={()=>{
+                                                                approveRequest(req.users.id, req.networks.id); 
+                                                                removeRequest(req.users.id, req.networks.id);
+                                                                setShowModal_ViewReqs(false);
+                                                                }}>
+                                                            <ButtonText>Approve</ButtonText>
+                                                        </Button>
+                                                        <Button size="xs" bg={styles.logout.backgroundColor} 
+                                                            onPress={()=>{
+                                                                removeRequest(req.users.id, req.networks.id);
+                                                                setShowModal_ViewReqs(false);
+                                                                }}>
+                                                            <ButtonText>Reject</ButtonText>
+                                                        </Button>
+                                                    </HStack></VStack></Box></View>))) : (<Text></Text>)}
+                                            </KeyboardAvoidingView>
+                                        </ModalBody>
+                                        <ModalFooter>
+                                            <Button
+                                                size="sm"
+                                                action="positive"
+                                                borderWidth="$0"
+                                                onPress={() => {
+                                                    setShowModal_ViewReqs(false);
+                                                }}
+                                            >
+                                                <ButtonText>Done</ButtonText>
+                                            </Button>
+                                        </ModalFooter>
+                                    </ModalContent>
+                                </Modal>
+
                                 <HStack space="md">
-                                    <Text size="sm">Cost per kilo</Text>
+                                    <Text size="sm">Cost per kilogram</Text>
                                     <Switch
                                         isDisabled={false}
                                         isInvalid={false}
@@ -883,7 +1200,7 @@ export default function Dashboard() {
                                     <InputField
                                         placeholder={
                                             formData.perKilo
-                                                ? "Cost per kg"
+                                                ? "Cost per kilogram"
                                                 : "Cost per max load"
                                         }
                                         onChangeText={(value) =>
@@ -891,238 +1208,26 @@ export default function Dashboard() {
                                         }
                                     />
                                 </Input>
-                                <Input
-                                    variant="outline"
-                                    size="md"
-                                    isDisabled={formData.perKilo}
-                                    isInvalid={false}
-                                    isReadOnly={false}
-                                >
-                                    <InputField
-                                        placeholder={"Max load in kg"}
-                                        onChangeText={(value) =>
-                                            handleChange("maxload", value)
-                                        }
-                                    />
-                                </Input>
-                                <Heading size="sm">Labuddy Group Requests</Heading>
-                                {requests.length > 0 ? (
-                                requests.map((req) => (<View key={req.users.id + req.networks.id}><Box
-                                    p="$4"
-                                    borderWidth="$1"
-                                    borderRadius="$lg"
-                                    borderColor="$borderLight300"
-                                    style={{ flex: 1, minWidth: 200 }}
-                                ><VStack space="xs"><Text>{req.users.first_name} {req.users.last_name} wants to join {req.networks.name}</Text><HStack space="md">
-                                    <Button action="positive" size="xs" bg="green" onPress={()=>{approveRequest(req.users.id, req.networks.id); removeRequest(req.users.id, req.networks.id)}}><ButtonText>Approve</ButtonText></Button>
-                                    <Button size="xs"bg={styles.logout.backgroundColor} onPress={()=>{removeRequest(req.users.id, req.networks.id)}}><ButtonText>Reject</ButtonText></Button>
+                                {
+                                    !formData.perKilo &&
+                                    <Input
+                                        variant="outline"
+                                        size="md"
+                                        isDisabled={formData.perKilo}
+                                        isInvalid={false}
+                                        isReadOnly={false}
+                                    >
                                     
-                                    </HStack></VStack></Box></View>))) : (<Text></Text>)}
+                                            <InputField
+                                                placeholder={"Max load (in kilograms)"}
+                                                onChangeText={(value) =>
+                                                    handleChange("maxload", value)
+                                                }
+                                            />
+                                    </Input>
+                                }
                             </VStack>
                         </Box>
-                        {/*Some modals (for the mapped components below) are up here because it bugs out down there*/}
-                        {/*For editing network*/}
-                        <Modal
-                            isOpen={showModal3}
-                            onClose={() => {
-                                setShowModal3(false);
-                            }}
-                            finalFocusRef={ref}
-                        >
-                            <ModalBackdrop />
-                            <ModalContent>
-                                <ModalHeader>
-                                    <Heading size="lg">
-                                        Edit Labuddy Group
-                                    </Heading>
-                                    <ModalCloseButton>
-                                        <Icon as={CloseIcon} />
-                                    </ModalCloseButton>
-                                </ModalHeader>
-                                <ModalBody>
-                                    <KeyboardAvoidingView
-                                        behavior={
-                                            Platform.OS === "ios"
-                                                ? "padding"
-                                                : "height"
-                                        }
-                                        style={{ flex: 1 }}
-                                    >
-                                        <VStack space="md">
-                                            <Text>
-                                                Edit your group here.
-                                            </Text>
-                                            <Input
-                                                variant="outline"
-                                                size="md"
-                                                isDisabled={false}
-                                                isInvalid={false}
-                                                isReadOnly={false}
-                                            >
-                                                <InputField
-                                                    placeholder="New Group Name"
-                                                    onChangeText={(value) => {
-                                                        handleChange(
-                                                            "network_name",
-                                                            value
-                                                        );
-                                                    }}
-                                                />
-                                            </Input>
-                                        </VStack>
-                                    </KeyboardAvoidingView>
-                                </ModalBody>
-                                <ModalFooter>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        action="secondary"
-                                        mr="$3"
-                                        onPress={() => {
-                                            setShowModal3(false);
-                                        }}
-                                    >
-                                        <ButtonText>Cancel</ButtonText>
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        action="positive"
-                                        borderWidth="$0"
-                                        onPress={() => {
-                                            editNetwork(formData);
-                                            setShowModal3(false);
-                                        }}
-                                    >
-                                        <ButtonText>Edit</ButtonText>
-                                    </Button>
-                                </ModalFooter>
-                            </ModalContent>
-                        </Modal>
-
-                        {/*For (confirming) deleting network*/}
-                        <Modal
-                            isOpen={showModal4}
-                            onClose={() => {
-                                setShowModal4(false);
-                            }}
-                            finalFocusRef={ref}
-                        >
-                            <ModalBackdrop />
-                            <ModalContent>
-                                <ModalHeader>
-                                    <Heading size="lg">
-                                        Delete Labuddy Group?
-                                    </Heading>
-                                    <ModalCloseButton>
-                                        <Icon as={CloseIcon} />
-                                    </ModalCloseButton>
-                                </ModalHeader>
-                                <ModalBody>
-                                    <KeyboardAvoidingView
-                                        behavior={
-                                            Platform.OS === "ios"
-                                                ? "padding"
-                                                : "height"
-                                        }
-                                        style={{ flex: 1 }}
-                                    >
-                                        <VStack space="md">
-                                            <Text>
-                                                You will be deleting this group forever.
-                                            </Text>
-                                        </VStack>
-                                    </KeyboardAvoidingView>
-                                </ModalBody>
-                                <ModalFooter>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        action="secondary"
-                                        mr="$3"
-                                        onPress={() => {
-                                            setShowModal4(false);
-                                        }}
-                                    >
-                                        <ButtonText>Cancel</ButtonText>
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        action="positive"
-                                        borderWidth="$0"
-                                        bg={styles.logout.backgroundColor}
-                                        onPress={() => {
-                                            deleteNetwork(formData);
-                                            setShowModal4(false);
-                                        }}
-                                    >
-                                        <ButtonText>Delete</ButtonText>
-                                    </Button>
-                                </ModalFooter>
-                            </ModalContent>
-                        </Modal>
-
-                        {/*For leaving network*/}
-                        <Modal
-                            isOpen={showModal_LeaveGroup}
-                            onClose={() => {
-                                setShowModal_LeaveGroup(false);
-                            }}
-                            finalFocusRef={ref}
-                        >
-                            <ModalBackdrop />
-                            <ModalContent>
-                                <ModalHeader>
-                                    <Heading size="lg">
-                                        Leave Labuddy Group?
-                                    </Heading>
-                                    <ModalCloseButton>
-                                        <Icon as={CloseIcon} />
-                                    </ModalCloseButton>
-                                </ModalHeader>
-                                <ModalBody>
-                                    <KeyboardAvoidingView
-                                        behavior={
-                                            Platform.OS === "ios"
-                                                ? "padding"
-                                                : "height"
-                                        }
-                                        style={{ flex: 1 }}
-                                    >
-                                        <VStack space="md">
-                                            <Text>
-                                                Make sure all your Labuddies have left this group as well.
-                                                Otherwise, you will leave them here which is just sad 🥲
-                                            </Text>
-                                        </VStack>
-                                    </KeyboardAvoidingView>
-                                </ModalBody>
-                                <ModalFooter>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        action="secondary"
-                                        mr="$3"
-                                        onPress={() => {
-                                            setShowModal_LeaveGroup(false);
-                                        }}
-                                    >
-                                        <ButtonText>Cancel</ButtonText>
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        action="positive"
-                                        borderWidth="$0"
-                                        bg={styles.logout.backgroundColor}
-                                        onPress={() => {
-                                            leaveNetwork(formData);
-                                            setShowModal_LeaveGroup(false);
-                                        }}
-                                    >
-                                        <ButtonText>Leave</ButtonText>
-                                    </Button>
-                                </ModalFooter>
-                            </ModalContent>
-                        </Modal>
 
                         <Box
                             p="$4"
@@ -1162,8 +1267,7 @@ export default function Dashboard() {
                                                             <ButtonIcon as={TrashIcon}/>
                                                         </Button>
                                                     </HStack>
-                                                    </View>
-                                                }
+                                                } 
                                                 {
                                                     network.networks?.owner_id != metadata.id && 
                                                     <HStack space="sm" justifyContent="flex-end">
@@ -1178,58 +1282,45 @@ export default function Dashboard() {
                                                         <ButtonIcon as={CloseCircleIcon}/>
 
                                                         </Button>
-                                                    </HStack>
+                                                    </HStack>//
                                                 }
                                             </Box>
-                                            <Text size="xs" color="gray" bold="true">
-                                                Total Weight (White): {network.networks.whitesum} kg{"\n"}
-                                                Total Weight (Colored): {network.networks.colorsum} kg{"\n"}
-                                                Cost:{" "}
-                                                {formData.perKilo
-                                                    ? formData.cost * (network.networks.whitesum + network.networks.colorsum)
-                                                    : Math.floor(calcNumLoads(network.networks.whitesum, formData.maxload)) *
-                                                    formData.cost  + Math.floor(calcNumLoads(network.networks.colorsum, formData.maxload)) *
-                                                    formData.cost }
-                                            </Text>
+                                            {
+                                                network.networks.baskets.length > 0 &&
+                                                <Text size="xs" color="gray" bold="true">
+                                                    Total Weight (White): {network.networks.whitesum} kg{"\n"}
+                                                    Total Weight (Colored): {network.networks.colorsum} kg{"\n"}
+                                                    Cost:{" "}
+                                                    {formData.perKilo
+                                                        ? formData.cost * (network.networks.whitesum + network.networks.colorsum)
+                                                        : Math.floor(calcNumLoads(network.networks.whitesum, formData.maxload)) *
+                                                        formData.cost  + Math.floor(calcNumLoads(network.networks.colorsum, formData.maxload)) *
+                                                        formData.cost }
+                                                </Text>
+                                            }
                                             {network.networks.baskets.length >
                                                 0 ? (
                                                 <VStack space="sm">
                                                     {network.networks.baskets.map(
                                                         (labuddy) => (
-                                                            <View
-                                                                key={labuddy.id}
-                                                            >
+                                                            <View key={labuddy.id}>
                                                                 <Pressable
                                                                     onPress={() => {
-                                                                        setShowModal5(
-                                                                            true
-                                                                        )
+                                                                        setShowModal5(true)
                                                                         setSelectedLabuddy(labuddy)
-                                                                    }
-                                                                    }
+                                                                    }} 
                                                                     p="$5"
                                                                     bg="$primary500"
                                                                     $hover-bg="$primary400"
-                                                                    style={{
-                                                                        zIndex: 0
-                                                                    }}
+                                                                    style={{zIndex: 0}}
                                                                 >
                                                                     <LabuddyCard
-                                                                        labuddy={
-                                                                            labuddy
-                                                                        }
-                                                                        cost={
-                                                                            formData.cost
-                                                                        }
-                                                                        perKilo={
-                                                                            formData.perKilo
-                                                                        }
-                                                                        maxload={
-                                                                            formData.maxload
-                                                                        }
+                                                                        labuddy={labuddy}
+                                                                        cost={formData.cost}
+                                                                        perKilo={formData.perKilo}
+                                                                        maxload={formData.maxload}
                                                                     />
                                                                 </Pressable>
-
                                                             </View>
                                                         )
                                                     )}

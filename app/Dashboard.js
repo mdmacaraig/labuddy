@@ -5,7 +5,8 @@ import {
     ActivityIndicator,
     Typography,
     Platform,
-    Pressable
+    Pressable,
+    Alert
 } from "react-native";
 import { useState, useEffect, useRef } from "react";
 import {
@@ -58,6 +59,7 @@ export default function Dashboard() {
     const [metadata, setMetadata] = useState(null);
     const [loading, setLoading] = useState(true);
     const [networks, setNetworks] = useState([]);
+    const [requests, setRequests] = useState([]);
     const navigation = useNavigation();
     const [showModal, setShowModal] = useState(false); // For adding a labuddy
     const [showModal2, setShowModal2] = useState(false); // For creating a network
@@ -65,7 +67,9 @@ export default function Dashboard() {
     const [showModal4, setShowModal4] = useState(false); // For deleting a network
     const [showModal5, setShowModal5] = useState(false); // For editing labuddy
     const [showModal_LeaveGroup, setShowModal_LeaveGroup] = useState(false); // For leaving a labuddy group
+    const [showModalJoin, setShowModalJoin] = useState(false);
     const [selectedLabuddy, setSelectedLabuddy] = useState();
+    const [reqUsername, setRequestUsername] = useState();
     const ref = useRef(null);
     const ref2 = useRef(null);
 
@@ -78,7 +82,8 @@ export default function Dashboard() {
         maxload: 0,
         labuddy_name: "",
         form_white_max: 0,
-        form_color_max: 0
+        form_color_max: 0,
+        network_req: ""
     });
 
     async function getTotalWeight(id) {
@@ -158,13 +163,13 @@ export default function Dashboard() {
             navigation.dispatch(e.data.action);
         });
         const fetchData = async () => {
-            await fetchNetworks();
             await getUserMetadata();
+            await fetchNetworks();
             setLoading(false); // Set loading to false after fetching data
         };
-
+        
         fetchData();
-
+        
         const subscription1 = supabase
             .channel("public:baskets")
             .on(
@@ -201,13 +206,31 @@ export default function Dashboard() {
             )
             .subscribe();
 
+            const subscription4 = supabase
+            .channel("public:network_requests")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "network_requests" },
+                (payload) => {
+                    console.log("Change received!", payload);
+                    fetchNetworks();
+                }
+            )
+            .subscribe();
         // Cleanup subscription on component unmount
         return () => {
             supabase.removeChannel(subscription1);
             supabase.removeChannel(subscription2);
             supabase.removeChannel(subscription3);
+            supabase.removeChannel(subscription4);
         };
     }, []);
+
+    useEffect(() => {
+        if (networks.length > 0) {
+          fetchNetworkRequests();
+        }
+      }, [networks]);
 
     async function getUserMetadata() {
         const { data: user, error: userError } = await supabase.auth.getUser();
@@ -244,6 +267,26 @@ export default function Dashboard() {
 
         setNetworks(network || []);
         console.log("networks:", network);
+    }
+
+    async function fetchNetworkRequests() {
+        //fetchNetworks();
+        //get user data
+        const myNetworks = networks.map((x)=>x.networks)
+        const myOwnedNetworks = myNetworks.filter(checkOwned)
+        console.log(myOwnedNetworks.map((x)=>x.id))
+        const { data: userdata, error: userError } =
+            await supabase.auth.getUser();
+        //get network that user can access
+        const { data: reqs, error: networkError } = await supabase
+            .from("network_requests")
+            .select(`networks(id, name), users (id, first_name, last_name)`)
+            .eq("network_id", myOwnedNetworks.map((x)=>x.id))
+        if (networkError){ console.log(networkError)}
+        
+
+        setRequests(reqs || []);
+        console.log("requests:", requests);
     }
 
     const doLogout = async (event) => {
@@ -300,6 +343,97 @@ export default function Dashboard() {
         } catch (e) {
             console.log(e);
         }
+    }
+
+    async function removeRequest(user, net) {
+        try {
+            const name = formData["network_name"];
+            const { data, error } = await supabase
+                .from("network_requests")
+                .delete()
+                .eq('network_id', net)
+                .eq('user_id', user)
+            if (error){
+                console.log(error)
+                Alert.alert('Error', "Can't delete request")
+            }
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    async function approveRequest(user, net) {
+        try {
+            const name = formData["network_name"];
+            const { data, error } = await supabase
+                .from("network_users")
+                .insert([
+                    { user_id: user, network_id: net }
+                ])
+                .eq('network_id', net)
+                .eq('user_id', user)
+            if (error){
+                console.log(error)
+                Alert.alert('Error', "Can't approve request")
+            }
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    async function getRequestUsername(r) {
+        try {
+            const { data, error } = await supabase
+                .from("users")
+                .select('name')
+                .eq('id', r.user_id)
+                console.log(data[0])
+            setRequestUsername(data[0])
+
+        } catch (e) {
+            console.log(e);
+            return('null')
+        }
+    }
+
+    function checkOwned(nw){
+        return nw.owner_id == metadata.id
+    }
+    async function joinNetwork(formData) {
+        const req = formData.network_req
+        const myNetworks = networks.map((x)=>x.networks)
+        const myOwnedNetworks = myNetworks.filter(checkOwned)
+        try {
+            const { data, error } = await supabase
+                .from("networks")
+                .select()
+                .eq('name', req)
+            const req_network_id = data[0].id;
+            console.log(myNetworks.map((x)=>x.owner_id))
+            console.log(req_network_id);
+            if(myNetworks.map((x)=>x.id).includes(req_network_id)){
+                console.log('Already a part of this Labuddy Group')
+                Alert.alert('Error','Already a part of this Labuddy Group')
+            }
+            else{
+            const { data: network_user, error: networkUserError } =
+                await supabase
+                    .from("network_requests")
+                    .insert([
+                        { network_id: req_network_id, user_id: metadata.id, is_labuddy: false }
+                    ])
+                    .select();
+                if (networkUserError){
+                    console.log('Already requested')
+                    Alert.alert('Error','Please wait for the owner of the Labddy Group to entertain your request.')
+                }
+                }
+        } catch (e) {
+            Alert.alert("Error", "Labuddy Group not found");
+            console.log(e);
+        }
+        //console.log(networks.map((x)=>x.networks.name))
+        //console.log(formData.network_req)
     }
 
     async function editNetwork(formData) {
@@ -640,6 +774,94 @@ export default function Dashboard() {
                                         </ModalFooter>
                                     </ModalContent>
                                 </Modal>
+                                <Button
+                                    style={styles.outlinebutton}
+                                    onPress={() => {setShowModalJoin(true);
+                                        handleChange("network_req", "");
+                                    }}
+                                >
+                                    <ButtonText color="#028391">Join Labuddy Group</ButtonText>
+                                    </Button>
+                                    <Modal
+                                    isOpen={showModalJoin}
+                                    onClose={() => {
+                                        setShowModalJoin(false);
+                                        handleChange("network_req", "");
+                                    }}
+                                    finalFocusRef={ref}
+                                >
+                                    <ModalBackdrop />
+                                    <ModalContent>
+                                        <ModalHeader>
+                                            <Heading size="lg">
+                                                Join Labuddy Group
+                                            </Heading>
+                                            <ModalCloseButton>
+                                                <Icon as={CloseIcon} />
+                                            </ModalCloseButton>
+                                        </ModalHeader>
+                                        <ModalBody>
+                                            <KeyboardAvoidingView
+                                                behavior={
+                                                    Platform.OS === "ios"
+                                                        ? "padding"
+                                                        : "height"
+                                                }
+                                                style={{ flex: 1 }}
+                                            >
+                                                <VStack space="md">
+                                                    <Text>
+                                                        Join a Labuddy Group to see other Labuddies in a household! Enter the name of the Labuddy Group you want to join.
+                                                    </Text>
+                                                    <Input
+                                                        variant="outline"
+                                                        size="md"
+                                                        isDisabled={false}
+                                                        isInvalid={false}
+                                                        isReadOnly={false}
+                                                    >
+                                                        <InputField
+                                                            placeholder="Labuddy Group Name"
+                                                            onChangeText={(
+                                                                value
+                                                            ) => {
+                                                                handleChange(
+                                                                    "network_req",
+                                                                    value
+                                                                );
+                                                            }}
+                                                        />
+                                                    </Input>
+                                                </VStack>
+                                            </KeyboardAvoidingView>
+                                        </ModalBody>
+                                        <ModalFooter>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                action="secondary"
+                                                mr="$3"
+                                                onPress={() => {
+                                                    setShowModalJoin(false);
+                                                }}
+                                            >
+                                                <ButtonText>Cancel</ButtonText>
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                action="positive"
+                                                borderWidth="$0"
+                                                onPress={() => {
+                                                    joinNetwork(formData);
+                                                    setShowModalJoin(false);
+                                                }}
+                                            >
+                                                <ButtonText>Join</ButtonText>
+                                            </Button>
+                                        </ModalFooter>
+                                    </ModalContent>
+                                </Modal>
+                                
                                 <HStack space="md">
                                     <Text size="sm">Cost per kilo</Text>
                                     <Switch
@@ -683,6 +905,19 @@ export default function Dashboard() {
                                         }
                                     />
                                 </Input>
+                                <Heading size="sm">Labuddy Group Requests</Heading>
+                                {requests.length > 0 ? (
+                                requests.map((req) => (<View key={req.users.id + req.networks.id}><Box
+                                    p="$4"
+                                    borderWidth="$1"
+                                    borderRadius="$lg"
+                                    borderColor="$borderLight300"
+                                    style={{ flex: 1, minWidth: 200 }}
+                                ><VStack space="xs"><Text>{req.users.first_name} {req.users.last_name} wants to join {req.networks.name}</Text><HStack space="md">
+                                    <Button action="positive" size="xs" bg="green" onPress={()=>{approveRequest(req.users.id, req.networks.id); removeRequest(req.users.id, req.networks.id)}}><ButtonText>Approve</ButtonText></Button>
+                                    <Button size="xs"bg={styles.logout.backgroundColor} onPress={()=>{removeRequest(req.users.id, req.networks.id)}}><ButtonText>Reject</ButtonText></Button>
+                                    
+                                    </HStack></VStack></Box></View>))) : (<Text></Text>)}
                             </VStack>
                         </Box>
                         {/*Some modals (for the mapped components below) are up here because it bugs out down there*/}
@@ -927,6 +1162,7 @@ export default function Dashboard() {
                                                             <ButtonIcon as={TrashIcon}/>
                                                         </Button>
                                                     </HStack>
+                                                    </View>
                                                 }
                                                 {
                                                     network.networks?.owner_id != metadata.id && 
@@ -1281,6 +1517,11 @@ const styles = StyleSheet.create({
     },
     button: {
         backgroundColor: "#028391"
+    },
+    outlinebutton: {
+        borderWidth: 1,
+        borderColor: "#028391",
+        backgroundColor: "white"
     },
     logout: {
         backgroundColor: "#C70039"

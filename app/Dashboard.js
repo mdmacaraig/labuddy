@@ -55,7 +55,6 @@ import { useNavigation, router } from "expo-router";
 import LabuddyCard from "./labuddycard";
 import supabase from "../lib/supabase";
 import axios from "axios";
-import { Dropdown } from 'react-native-element-dropdown';
 
 export default function Dashboard() {
     const [metadata, setMetadata] = useState(null);
@@ -1122,7 +1121,7 @@ export default function Dashboard() {
                                         <ModalHeader>
                                             <Heading size="lg">
                                                 { requests.length > 0 ? 
-                                                    "People want to join your Labuddy Groups" : 
+                                                    "People want to join your Labuddy Groups!" : 
                                                     "No join requests." }                                               
                                             </Heading>
                                             <ModalCloseButton>

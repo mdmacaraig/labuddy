@@ -89,11 +89,14 @@ export default function Dashboard() {
     }
 
     function calcNumLoads(weight, maxload) {
-        if (Math.floor(weight / maxload) == weight / maxload) {
-            return weight / maxload;
-        } else {
-            return weight / maxload + 1;
-        }
+        if (maxload === 0 || maxload == null || isNaN(maxload)) 
+            return 0;
+        
+        const ret = weight / maxload;
+        if (Math.floor(ret) == ret) 
+            return ret;
+        else 
+            return ret + 1;
     }
 
     const handleChange = (name, value) => {
@@ -943,14 +946,14 @@ export default function Dashboard() {
                                                 }
                                             </Box>
                                             <Text size="xs" color="gray" bold="true">
-                                                Total Weight (White): {network.networks.whitesum} kg
-                                                Total Weight (Colored): {network.networks.colorsum} kg
+                                                Total Weight (White): {network.networks.whitesum} kg{"\n"}
+                                                Total Weight (Colored): {network.networks.colorsum} kg{"\n"}
                                                 Cost:{" "}
                                                 {formData.perKilo
                                                     ? formData.cost * (network.networks.whitesum + network.networks.colorsum)
                                                     : Math.floor(calcNumLoads(network.networks.whitesum, formData.maxload)) *
-                                                    formData.cost + Math.floor(calcNumLoads(network.networks.colorsum, formData.maxload)) *
-                                                    formData.cost}
+                                                    formData.cost  + Math.floor(calcNumLoads(network.networks.colorsum, formData.maxload)) *
+                                                    formData.cost }
                                             </Text>
                                             {network.networks.baskets.length >
                                                 0 ? (

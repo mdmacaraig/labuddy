@@ -65,11 +65,14 @@ export default function LabuddyCard({ labuddy, cost, perKilo, maxload }) {
     }, []);
 
     function calcNumLoads(weight, maxload) {
-        if (Math.floor(weight / maxload) == weight / maxload) {
-            return weight / maxload;
-        } else {
-            return weight / maxload + 1;
-        }
+        if (maxload === 0 || maxload == null || isNaN(maxload)) 
+            return 0;
+        
+        const ret = weight / maxload;
+        if (Math.floor(ret) == ret) 
+            return ret;
+        else 
+            return ret + 1;
     }
 
     async function getLabuddyMetadata() {

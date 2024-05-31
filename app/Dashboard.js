@@ -79,6 +79,21 @@ export default function Dashboard() {
         form_color_max: 0
     });
 
+    async function getTotalWeight(id) {
+        let { data, error } = await supabase.from("labuddy_group_weight").select("*").eq("network_id", id);
+        const colorsum = data[0].colorsum;
+        const whitesum = data[0].whitesum;
+        return [whitesum, colorsum];
+    }
+
+    function calcNumLoads(weight, maxload) {
+        if (Math.floor(weight / maxload) == weight / maxload) {
+            return weight / maxload;
+        } else {
+            return weight / maxload + 1;
+        }
+    }
+
     const handleChange = (name, value) => {
         setFormData((prevData) => ({
             ...prevData,
@@ -161,7 +176,7 @@ export default function Dashboard() {
             )
             .subscribe();
 
-            const subscription3 = supabase
+        const subscription3 = supabase
             .channel("public:users")
             .on(
                 "postgres_changes",
@@ -201,7 +216,13 @@ export default function Dashboard() {
         const { data: network, error: networkError } = await supabase
             .from("network_users")
             .select("networks(*, baskets(*, users(*)))")
-            .eq("user_id", userdata?.user?.id);
+            .eq("user_id", userdata?.user?.id)
+
+        network.map(async (network) => {
+            id = network.networks.id;
+            [network.networks.whitesum, network.networks.colorsum] = await getTotalWeight(id);
+            return network;
+        })
 
         setNetworks(network || []);
         console.log("networks:", network);
@@ -273,7 +294,7 @@ export default function Dashboard() {
             const id = formData["network_id"];
             const { data, error } = await supabase
                 .from("networks")
-                .update([{name: newName}])
+                .update([{ name: newName }])
                 .eq("id", id);
             await fetchNetworks();
         } catch (e) {
@@ -360,10 +381,10 @@ export default function Dashboard() {
                                                         Add your Labuddies here.
                                                         To add a Labuddy:
                                                         <Text size="sm">
-                                                        {'\n'}
-                                                        {'\u2022'} Connect to the Access Point of the Labuddy.
-                                                        {'\n\u2022'} Enter the wifi credentials of the network that you want your Labuddy to connect to below.
-                                                        {'\n\u2022'} Select the Labuddy Group you want the Labuddy to be in.
+                                                            {'\n'}
+                                                            {'\u2022'} Connect to the Access Point of the Labuddy.
+                                                            {'\n\u2022'} Enter the wifi credentials of the network that you want your Labuddy to connect to below.
+                                                            {'\n\u2022'} Select the Labuddy Group you want the Labuddy to be in.
                                                         </Text>
                                                     </Text>
                                                     <Input
@@ -647,7 +668,7 @@ export default function Dashboard() {
                         >
                             <ModalBackdrop />
                             <ModalContent>
-                                <ModalHeader>   
+                                <ModalHeader>
                                     <Heading size="lg">
                                         Edit Labuddy Group
                                     </Heading>
@@ -725,7 +746,7 @@ export default function Dashboard() {
                         >
                             <ModalBackdrop />
                             <ModalContent>
-                                <ModalHeader>   
+                                <ModalHeader>
                                     <Heading size="lg">
                                         Delete Labuddy Group?
                                     </Heading>
@@ -815,6 +836,14 @@ export default function Dashboard() {
                                                     </HStack>
                                                 }
                                             </Heading>
+
+                                            <Text size="xs" color="gray" bold="true">Total Weight (White): {network.networks.whitesum} kg, Total Weight (Colored): {network.networks.colorsum} kg, Cost:{" "}
+                                                {formData.perKilo
+                                                    ? formData.cost * (network.networks.whitesum + network.networks.colorsum)
+                                                    : Math.floor(calcNumLoads(network.networks.whitesum, formData.maxload)) *
+                                                    formData.cost + Math.floor(calcNumLoads(network.networks.colorsum, formData.maxload)) *
+                                                    formData.cost}
+                                            </Text>
                                             {network.networks.baskets.length >
                                                 0 ? (
                                                 <VStack space="sm">
@@ -824,11 +853,12 @@ export default function Dashboard() {
                                                                 key={labuddy.id}
                                                             >
                                                                 <Pressable
-                                                                    onPress={() =>{
+                                                                    onPress={() => {
                                                                         setShowModal5(
                                                                             true
                                                                         )
-                                                                        setSelectedLabuddy(labuddy)}
+                                                                        setSelectedLabuddy(labuddy)
+                                                                    }
                                                                     }
                                                                     p="$5"
                                                                     bg="$primary500"
@@ -852,7 +882,7 @@ export default function Dashboard() {
                                                                         }
                                                                     />
                                                                 </Pressable>
-                                                                
+
                                                             </View>
                                                         )
                                                     )}
@@ -885,168 +915,168 @@ export default function Dashboard() {
                         </Button>
                     </Box>
                     {showModal5 && selectedLabuddy && (<Modal
-                                                                    isOpen={
-                                                                        showModal5
-                                                                    }
-                                                                    onClose={() => {
-                                                                        setShowModal5(
-                                                                            false
-                                                                        );
-                                                                    }}
-                                                                    finalFocusRef={
-                                                                        ref
-                                                                    }
-                                                                    style={{
-                                                                        zIndex: 1000
-                                                                    }}
-                                                                >
-                                                                    <ModalBackdrop />
-                                                                    <ModalContent>
-                                                                        <ModalHeader>
-                                                                            <Heading size="lg">
-                                                                                {selectedLabuddy.users ==
-                                                                                    null
-                                                                                    ? "Labuddy"
-                                                                                    : selectedLabuddy.users.first_name}
-                                                                            </Heading>
-                                                                            <ModalCloseButton>
-                                                                                <Icon
-                                                                                    as={
-                                                                                        CloseIcon
-                                                                                    }
-                                                                                />
-                                                                            </ModalCloseButton>
-                                                                        </ModalHeader>
-                                                                        <ModalBody
-                                                                            style={{
-                                                                                zIndex: 1000
-                                                                            }}
-                                                                        >
-                                                                            <VStack space="md">
-                                                                                <Heading size="xs">
-                                                                                    Edit
-                                                                                    Labuddy
-                                                                                    Name
-                                                                                </Heading>
-                                                                                <Input
-                                                                                    variant="outline"
-                                                                                    size="md"
-                                                                                    isDisabled={
-                                                                                        false
-                                                                                    }
-                                                                                    isInvalid={
-                                                                                        false
-                                                                                    }
-                                                                                    isReadOnly={
-                                                                                        false
-                                                                                    }
-                                                                                >
-                                                                                    <InputField
-                                                                                        placeholder={
-                                                                                            selectedLabuddy ==
-                                                                                                null
-                                                                                                ? "Labuddy"
-                                                                                                : selectedLabuddy.users.first_name
-                                                                                        }
-                                                                                        onChangeText={(
-                                                                                            value
-                                                                                        ) =>
-                                                                                            handleChange(
-                                                                                                "labuddy_name",
-                                                                                                value
-                                                                                            )
-                                                                                        }
-                                                                                    />
-                                                                                </Input>
-                                                                                <Heading size="xs">
-                                                                                    Edit
-                                                                                    Max
-                                                                                    Weight
-                                                                                    for
-                                                                                    White
-                                                                                    Clothes
-                                                                                </Heading>
-                                                                                <Input
-                                                                                    variant="outline"
-                                                                                    size="md"
-                                                                                    isDisabled={
-                                                                                        false
-                                                                                    }
-                                                                                    isInvalid={
-                                                                                        false
-                                                                                    }
-                                                                                    isReadOnly={
-                                                                                        false
-                                                                                    }
-                                                                                >
-                                                                                    <InputField
-                                                                                        placeholder={selectedLabuddy.white_weight_limit.toString()}
-                                                                                        onChangeText={(
-                                                                                            value
-                                                                                        ) =>
-                                                                                            handleChange(
-                                                                                                "form_white_max",
-                                                                                                value
-                                                                                            )
-                                                                                        }
-                                                                                    />
-                                                                                </Input>
-                                                                                <Heading size="xs">
-                                                                                    Edit
-                                                                                    Max
-                                                                                    Weight
-                                                                                    for
-                                                                                    Colored
-                                                                                    Clothes
-                                                                                </Heading>
-                                                                                <Input
-                                                                                    variant="outline"
-                                                                                    size="md"
-                                                                                    isDisabled={
-                                                                                        false
-                                                                                    }
-                                                                                    isInvalid={
-                                                                                        false
-                                                                                    }
-                                                                                    isReadOnly={
-                                                                                        false
-                                                                                    }
-                                                                                >
-                                                                                    <InputField
-                                                                                        placeholder={selectedLabuddy.color_weight_limit.toString()}
-                                                                                        onChangeText={(
-                                                                                            value
-                                                                                        ) =>
-                                                                                            handleChange(
-                                                                                                "form_color_max",
-                                                                                                value
-                                                                                            )
-                                                                                        }
-                                                                                    />
-                                                                                </Input>
+                        isOpen={
+                            showModal5
+                        }
+                        onClose={() => {
+                            setShowModal5(
+                                false
+                            );
+                        }}
+                        finalFocusRef={
+                            ref
+                        }
+                        style={{
+                            zIndex: 1000
+                        }}
+                    >
+                        <ModalBackdrop />
+                        <ModalContent>
+                            <ModalHeader>
+                                <Heading size="lg">
+                                    {selectedLabuddy.users ==
+                                        null
+                                        ? "Labuddy"
+                                        : selectedLabuddy.users.first_name}
+                                </Heading>
+                                <ModalCloseButton>
+                                    <Icon
+                                        as={
+                                            CloseIcon
+                                        }
+                                    />
+                                </ModalCloseButton>
+                            </ModalHeader>
+                            <ModalBody
+                                style={{
+                                    zIndex: 1000
+                                }}
+                            >
+                                <VStack space="md">
+                                    <Heading size="xs">
+                                        Edit
+                                        Labuddy
+                                        Name
+                                    </Heading>
+                                    <Input
+                                        variant="outline"
+                                        size="md"
+                                        isDisabled={
+                                            false
+                                        }
+                                        isInvalid={
+                                            false
+                                        }
+                                        isReadOnly={
+                                            false
+                                        }
+                                    >
+                                        <InputField
+                                            placeholder={
+                                                selectedLabuddy ==
+                                                    null
+                                                    ? "Labuddy"
+                                                    : selectedLabuddy.users.first_name
+                                            }
+                                            onChangeText={(
+                                                value
+                                            ) =>
+                                                handleChange(
+                                                    "labuddy_name",
+                                                    value
+                                                )
+                                            }
+                                        />
+                                    </Input>
+                                    <Heading size="xs">
+                                        Edit
+                                        Max
+                                        Weight
+                                        for
+                                        White
+                                        Clothes
+                                    </Heading>
+                                    <Input
+                                        variant="outline"
+                                        size="md"
+                                        isDisabled={
+                                            false
+                                        }
+                                        isInvalid={
+                                            false
+                                        }
+                                        isReadOnly={
+                                            false
+                                        }
+                                    >
+                                        <InputField
+                                            placeholder={selectedLabuddy.white_weight_limit.toString()}
+                                            onChangeText={(
+                                                value
+                                            ) =>
+                                                handleChange(
+                                                    "form_white_max",
+                                                    value
+                                                )
+                                            }
+                                        />
+                                    </Input>
+                                    <Heading size="xs">
+                                        Edit
+                                        Max
+                                        Weight
+                                        for
+                                        Colored
+                                        Clothes
+                                    </Heading>
+                                    <Input
+                                        variant="outline"
+                                        size="md"
+                                        isDisabled={
+                                            false
+                                        }
+                                        isInvalid={
+                                            false
+                                        }
+                                        isReadOnly={
+                                            false
+                                        }
+                                    >
+                                        <InputField
+                                            placeholder={selectedLabuddy.color_weight_limit.toString()}
+                                            onChangeText={(
+                                                value
+                                            ) =>
+                                                handleChange(
+                                                    "form_color_max",
+                                                    value
+                                                )
+                                            }
+                                        />
+                                    </Input>
 
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    action="positive"
-                                                                                    borderWidth="$0"
-                                                                                    onPress={() => {
-                                                                                        updateSupabase(
-                                                                                            selectedLabuddy.id
-                                                                                        );
-                                                                                        setShowModal5(
-                                                                                            false
-                                                                                        );
-                                                                                    }}
-                                                                                >
-                                                                                    <ButtonText>
-                                                                                        Save
-                                                                                    </ButtonText>
-                                                                                </Button>
-                                                                            </VStack>
-                                                                        </ModalBody>
-                                                                        <ModalFooter></ModalFooter>
-                                                                    </ModalContent>
-                                                                </Modal>)}
+                                    <Button
+                                        size="sm"
+                                        action="positive"
+                                        borderWidth="$0"
+                                        onPress={() => {
+                                            updateSupabase(
+                                                selectedLabuddy.id
+                                            );
+                                            setShowModal5(
+                                                false
+                                            );
+                                        }}
+                                    >
+                                        <ButtonText>
+                                            Save
+                                        </ButtonText>
+                                    </Button>
+                                </VStack>
+                            </ModalBody>
+                            <ModalFooter></ModalFooter>
+                        </ModalContent>
+                    </Modal>)}
                     <StatusBar style="auto" />
                 </VStack>
             </ScrollView>

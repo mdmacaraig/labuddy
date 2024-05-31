@@ -217,12 +217,17 @@ export default function Dashboard() {
             .from("network_users")
             .select("networks(*, baskets(*, users(*)))")
             .eq("user_id", userdata?.user?.id)
-
+    
         network.map(async (network) => {
-            id = network.networks.id;
-            [network.networks.whitesum, network.networks.colorsum] = await getTotalWeight(id);
+            if(network.networks.baskets.length > 0){
+                id = network.networks.id;
+                [network.networks.whitesum, network.networks.colorsum] = await getTotalWeight(id);
+            }else{
+                [network.networks.whitesum, network.networks.colorsum] = [0,0];
+            }
             return network;
         })
+        
 
         setNetworks(network || []);
         console.log("networks:", network);

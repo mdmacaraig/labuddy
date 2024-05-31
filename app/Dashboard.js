@@ -58,6 +58,7 @@ export default function Dashboard() {
     const [metadata, setMetadata] = useState(null);
     const [loading, setLoading] = useState(true);
     const [networks, setNetworks] = useState([]);
+    const [requests, setRequests] = useState([]);
     const navigation = useNavigation();
     const [showModal, setShowModal] = useState(false); // For adding a labuddy
     const [showModal2, setShowModal2] = useState(false); // For creating a network
@@ -67,6 +68,7 @@ export default function Dashboard() {
     const [showModal_LeaveGroup, setShowModal_LeaveGroup] = useState(false); // For leaving a labuddy group
     const [showModalJoin, setShowModalJoin] = useState(false);
     const [selectedLabuddy, setSelectedLabuddy] = useState();
+    const [reqUsername, setRequestUsername] = useState();
     const ref = useRef(null);
     const ref2 = useRef(null);
 
@@ -157,13 +159,13 @@ export default function Dashboard() {
             navigation.dispatch(e.data.action);
         });
         const fetchData = async () => {
-            await fetchNetworks();
             await getUserMetadata();
+            await fetchNetworks();
             setLoading(false); // Set loading to false after fetching data
         };
-
+        
         fetchData();
-
+        
         const subscription1 = supabase
             .channel("public:baskets")
             .on(
@@ -200,13 +202,31 @@ export default function Dashboard() {
             )
             .subscribe();
 
+            const subscription4 = supabase
+            .channel("public:network_requests")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "network_requests" },
+                (payload) => {
+                    console.log("Change received!", payload);
+                    fetchNetworks();
+                }
+            )
+            .subscribe();
         // Cleanup subscription on component unmount
         return () => {
             supabase.removeChannel(subscription1);
             supabase.removeChannel(subscription2);
             supabase.removeChannel(subscription3);
+            supabase.removeChannel(subscription4);
         };
     }, []);
+
+    useEffect(() => {
+        if (networks.length > 0) {
+          fetchNetworkRequests();
+        }
+      }, [networks]);
 
     async function getUserMetadata() {
         const { data: user, error: userError } = await supabase.auth.getUser();
@@ -243,6 +263,26 @@ export default function Dashboard() {
 
         setNetworks(network || []);
         console.log("networks:", network);
+    }
+
+    async function fetchNetworkRequests() {
+        //fetchNetworks();
+        //get user data
+        const myNetworks = networks.map((x)=>x.networks)
+        const myOwnedNetworks = myNetworks.filter(checkOwned)
+        console.log(myOwnedNetworks.map((x)=>x.id))
+        const { data: userdata, error: userError } =
+            await supabase.auth.getUser();
+        //get network that user can access
+        const { data: reqs, error: networkError } = await supabase
+            .from("network_requests")
+            .select(`networks(id, name), users (id, first_name, last_name)`)
+            .eq("network_id", myOwnedNetworks.map((x)=>x.id))
+        if (networkError){ console.log(networkError)}
+        
+
+        setRequests(reqs || []);
+        console.log("requests:", requests);
     }
 
     const doLogout = async (event) => {
@@ -300,6 +340,58 @@ export default function Dashboard() {
             console.log(e);
         }
     }
+
+    async function removeRequest(user, net) {
+        try {
+            const name = formData["network_name"];
+            const { data, error } = await supabase
+                .from("network_requests")
+                .delete()
+                .eq('network_id', net)
+                .eq('user_id', user)
+            if (error){
+                console.log(error)
+                Alert.alert('Error', "Can't delete request")
+            }
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    async function approveRequest(user, net) {
+        try {
+            const name = formData["network_name"];
+            const { data, error } = await supabase
+                .from("network_users")
+                .insert([
+                    { user_id: user, network_id: net }
+                ])
+                .eq('network_id', net)
+                .eq('user_id', user)
+            if (error){
+                console.log(error)
+                Alert.alert('Error', "Can't approve request")
+            }
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    async function getRequestUsername(r) {
+        try {
+            const { data, error } = await supabase
+                .from("users")
+                .select('name')
+                .eq('id', r.user_id)
+                console.log(data[0])
+            setRequestUsername(data[0])
+
+        } catch (e) {
+            console.log(e);
+            return('null')
+        }
+    }
+
     function checkOwned(nw){
         return nw.owner_id == metadata.id
     }
@@ -810,6 +902,18 @@ export default function Dashboard() {
                                     />
                                 </Input>
                                 <Heading size="sm">Labuddy Group Requests</Heading>
+                                {requests.length > 0 ? (
+                                requests.map((req) => (<View key={req.users.id + req.networks.id}><Box
+                                    p="$4"
+                                    borderWidth="$1"
+                                    borderRadius="$lg"
+                                    borderColor="$borderLight300"
+                                    style={{ flex: 1, minWidth: 200 }}
+                                ><VStack space="xs"><Text>{req.users.first_name} {req.users.last_name} wants to join {req.networks.name}</Text><HStack space="md">
+                                    <Button action="positive" size="xs" bg="green" onPress={()=>{approveRequest(req.users.id, req.networks.id); removeRequest(req.users.id, req.networks.id)}}><ButtonText>Approve</ButtonText></Button>
+                                    <Button size="xs"bg={styles.logout.backgroundColor} onPress={()=>{removeRequest(req.users.id, req.networks.id)}}><ButtonText>Reject</ButtonText></Button>
+                                    
+                                    </HStack></VStack></Box></View>))) : (<Text></Text>)}
                             </VStack>
                         </Box>
                         {/*Some modals (for the mapped components below) are up here because it bugs out down there*/}

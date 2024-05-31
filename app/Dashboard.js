@@ -21,6 +21,7 @@ import {
     ButtonIcon,
     AddIcon,
     CloseIcon,
+    CloseCircleIcon,
     EditIcon,
     TrashIcon,
     Modal,
@@ -893,17 +894,19 @@ export default function Dashboard() {
                             style={{ flex: 2, minWidth: 200 }}
                         >
                             <VStack space="xl">
-                                {networks.length > 0 ? (
+                                {networks.length >   0 ? (
                                     networks.map((network) => (
                                         <View key={network.networks.id}>
+                                            <Box flexDirection="row" alignItems="center" justifyContent="space-between">
                                             <Heading size="sm">
                                                 Labuddy Group: {network.networks.name} 
+                                            </Heading>
                                                 {
                                                     network.networks?.owner_id == metadata.id && 
-                                                    <HStack space="sm">
+                                                    <HStack space="xs" justifyContent="flex-end">
                                                         <Button 
                                                             size="md" 
-                                                            variant="outline"
+                                                            variant="link"
                                                             onPress={() => {
                                                                 handleChange("network_id", network.networks.id)
                                                                 setShowModal3(true)}}
@@ -913,7 +916,7 @@ export default function Dashboard() {
                                                         </Button>
                                                         <Button
                                                             size="md" 
-                                                            variant="outline" 
+                                                            variant="link" 
                                                             onPress={() => {
                                                                 handleChange("network_id", network.networks.id)
                                                                 console.log(network.networks.id)
@@ -924,22 +927,21 @@ export default function Dashboard() {
                                                 }
                                                 {
                                                     network.networks?.owner_id != metadata.id && 
-                                                    <HStack space="sm">
+                                                    <HStack space="sm" justifyContent="flex-end">
                                                         <Button
                                                             size="md" 
-                                                            variant="outline"
+                                                            variant="link"
                                                             onPress={() => {
                                                                 handleChange("network_id", network.networks.id)
                                                                 setShowModal_LeaveGroup(true)}}
                                                             ref={ref}
                                                         >
-                                                        <ButtonIcon as={CloseIcon}/>
+                                                        <ButtonIcon as={CloseCircleIcon}/>
 
                                                         </Button>
                                                     </HStack>
                                                 }
-                                            </Heading>
-
+                                            </Box>
                                             <Text size="xs" color="gray" bold="true">Total Weight (White): {network.networks.whitesum} kg, Total Weight (Colored): {network.networks.colorsum} kg, Cost:{" "}
                                                 {formData.perKilo
                                                     ? formData.cost * (network.networks.whitesum + network.networks.colorsum)

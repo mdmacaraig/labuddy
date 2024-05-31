@@ -942,7 +942,10 @@ export default function Dashboard() {
                                                     </HStack>
                                                 }
                                             </Box>
-                                            <Text size="xs" color="gray" bold="true">Total Weight (White): {network.networks.whitesum} kg, Total Weight (Colored): {network.networks.colorsum} kg, Cost:{" "}
+                                            <Text size="xs" color="gray" bold="true">
+                                                Total Weight (White): {network.networks.whitesum} kg
+                                                Total Weight (Colored): {network.networks.colorsum} kg
+                                                Cost:{" "}
                                                 {formData.perKilo
                                                     ? formData.cost * (network.networks.whitesum + network.networks.colorsum)
                                                     : Math.floor(calcNumLoads(network.networks.whitesum, formData.maxload)) *
